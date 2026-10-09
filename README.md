@@ -64,6 +64,18 @@ MultiTracks.com does not offer a public API for lyrics, so Lumen doesn't scrape 
 - **Planning Center** (recommended). Songs in your plans carry SongSelect-imported lyrics and the arrangement's sequence (V1, C, V2, C, B, C…). Lumen builds the slides from them and re-syncs when the arrangement changes. Your own edits are protected with "Keep my edits".
 - **Direct import** of SongSelect `.usr` or `.txt` downloads, OpenLyrics XML, or pasted text.
 
+## Chord charts and Nashville numbers on the stage display
+
+- **Import:** select a song, then click **Chords** in the slide grid header (or right-click it in the Library → *Chords & Nashville Numbers…*). Then **Import Chord Chart…**. It accepts:
+  - PDF chord charts from SongSelect, Planning Center or MultiTracks, including two-column layouts. Scanned PDFs go through on-device OCR.
+  - ChordPro files (`.cho`, `.chordpro`).
+  - Plain-text charts with chords written above the lyrics.
+- **How chords get placed:** each chord is placed by its horizontal position over the lyric line below it. The chart's lyric lines are then matched to the song's slides by wording, so slides that break lines differently still get the right chords. A song with no slides yet is built from the chart.
+- **Key:** read from the chart ("Key - G", `{key: G}`). If the chart doesn't say, it's guessed from the chords. Nashville numbers are computed from the key, and minor keys are numbered from their relative major (Em → 6m).
+- **Fix mistakes:** every slide is editable ChordPro-style, e.g. `[G]Amazing grace how [C]sweet the [G]sound`. Move a bracket to move the chord. The preview next to each slide shows the numbers as the band will see them. You can also change the key, transpose, or clear the chords.
+- **Stage display:** go to **Setup → Stage → Chords** to show or hide the chords and choose Nashville numbers, letters, or both, and the chord color. The phone/tablet stage page (`/stage`) shows them too.
+- **Planning Center:** if an arrangement has a chord chart attached in Planning Center, sync applies it automatically. It never overwrites chords you've already fixed by hand.
+
 ## AI lyric following and scripture detection
 
 - Choose the audio input under **Live panel → waveform tab**. A clean vocal or pastor feed from the board (USB, Dante or aux) works much better than a room mic.

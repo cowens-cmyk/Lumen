@@ -393,6 +393,19 @@ struct StageSettings: View {
                     Slider(value: l.textScale, in: 0.6...1.6) { Text("Text size") }
                     ColorPicker("Current color", selection: ColorBinding.make(l.currentColor))
                     ColorPicker("Next color", selection: ColorBinding.make(l.nextColor))
+                    Section("Chords") {
+                        Toggle("Show chords above lyrics", isOn: Binding(get: { l.wrappedValue.showChords != false },
+                                                                         set: { l.wrappedValue.showChords = $0 }))
+                        Picker("Style", selection: Binding(get: { l.wrappedValue.chordStyle ?? .nashville },
+                                                           set: { l.wrappedValue.chordStyle = $0 })) {
+                            ForEach(ChordStyle.allCases) { Text($0.title).tag($0) }
+                        }
+                        ColorPicker("Chord color", selection: Binding(
+                            get: { (l.wrappedValue.chordColor ?? RGBA(hex: "#38BDF8")).color },
+                            set: { l.wrappedValue.chordColor = RGBA($0) }))
+                        Text("Songs show chords once a chord chart is imported (song → Chords). Nashville numbers are counted from the song's key, so they stay right even if the band changes keys.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     Section("Timers shown") {
                         ForEach(store.data.timers) { t in
                             Toggle(t.name, isOn: Binding(

@@ -195,9 +195,20 @@ final class PlanningCenterSync {
         let name = song?.string("title") ?? item.string("title") ?? "Song"
         let maxLines = store.resolvedTheme(for: Presentation(name: "", kind: .song)).maxLinesPerSlide
 
+        // Planning Center arrangements can carry a chord chart (ChordPro or chords-over-lyrics).
+        func applyChords(_ p: inout Presentation) {
+            guard let chartText = arr?.string("chord_chart"), !chartText.isEmpty,
+                  var chart = try? ChordChartReader.read(text: chartText, fallbackTitle: p.name) else { return }
+            if let k = arr?.string("chord_chart_key"), !k.isEmpty { chart.key = k }
+            // Keep hand-fixed chords unless the slides had none.
+            let hasChords = p.groups.contains { $0.slides.contains { !($0.chords ?? []).isEmpty } }
+            if !hasChords { ChordMatcher.apply(chart, to: &p, maxLines: maxLines) }
+        }
+
         if var existing = store.data.presentations.first(where: { $0.pcoArrangementID == arrID && arrID != nil }) {
             if !existing.lockedFromSync, existing.pcoUpdatedAt != updated {
                 LyricParser.apply(text: lyrics, to: &existing, maxLines: maxLines, sequence: sequence)
+                applyChords(&existing)
                 existing.pcoUpdatedAt = updated
                 store.upsert(existing)
                 note("Updated lyrics: \(existing.name)")
@@ -211,6 +222,7 @@ final class PlanningCenterSync {
         p.pcoSongID = songID
         p.pcoArrangementID = arrID
         p.pcoUpdatedAt = updated
+        applyChords(&p)
         if let arrName = arr?.string("name"), arrName.lowercased() != "default arrangement" { p.name += " (\(arrName))" }
         store.upsert(p)
         note("Added song: \(p.name)")

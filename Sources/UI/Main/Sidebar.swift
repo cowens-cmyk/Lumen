@@ -168,6 +168,9 @@ struct Sidebar: View {
 
     @ViewBuilder private func libraryMenu(_ p: Presentation) -> some View {
         Button("Edit…") { app.editingPresentationID = p.id }
+        if p.kind == .song {
+            Button("Chords & Nashville Numbers…") { app.editorInitialMode = 4; app.editingPresentationID = p.id }
+        }
         Button("Add to Current Playlist") { app.addToSelectedPlaylist(p.id) }.disabled(app.selectedPlaylistID == nil)
         Button("Duplicate") {
             var c = p; c.id = UUID(); c.name += " copy"; c.pcoArrangementID = nil; c.pcoSongID = nil

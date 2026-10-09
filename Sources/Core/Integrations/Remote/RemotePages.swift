@@ -88,14 +88,20 @@ html,body{margin:0;height:100%;background:#000;color:#fff;font-family:-apple-sys
 #msg{align-self:center;background:#facc15;color:#000;font-weight:800;font-size:5vh;padding:1vh 2vw;border-radius:1vh;display:none}
 #cur{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:8vh;padding:0 4vw;white-space:pre-wrap;line-height:1.15}
 #notes{color:#67e8f9;font-size:4vh;padding:0 4vw}
-#next{background:#161616;padding:2vh 4vw}#next small{color:#888;font-weight:800;font-size:2.2vh}#nextt{color:#facc15;font-size:5vh;font-weight:600;white-space:pre-wrap}
+#next{background:#161616;padding:2vh 4vw}
+.cl{display:block;white-space:nowrap}.sg{display:inline-flex;flex-direction:column;white-space:pre}.sg b{color:#38bdf8;font-size:.6em;font-weight:900;min-height:1.1em}#next small{color:#888;font-weight:800;font-size:2.2vh}#nextt{color:#facc15;font-size:5vh;font-weight:600;white-space:pre-wrap}
 </style></head><body><div id="wrap">
 <div id="top"><div id="clock"></div><div id="timers"></div></div><div id="msg"></div>
 <div id="cur"></div><div id="notes"></div><div id="next"><small id="ng">NEXT</small><div id="nextt"></div></div></div>
 <script>
 const $=id=>document.getElementById(id);
 async function poll(){try{const s=await (await fetch('/api/stage')).json();
-$('clock').textContent=s.clock||'';$('cur').textContent=s.current||'';$('nextt').textContent=s.next||'—';
+$('clock').textContent=s.clock||'';
+const esc=x=>(x||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const chordHTML=ls=>'<div>'+ls.map(l=>'<span class="cl">'+l.map(g=>`<span class="sg"><b>${esc(g.c)}${g.c?'&nbsp;':''}</b>${esc(g.t)||'&nbsp;'}</span>`).join('')+'</span>').join('')+'</div>';
+if(s.currentChords&&s.currentChords.length){$('cur').innerHTML=chordHTML(s.currentChords)}else{$('cur').textContent=s.current||''}
+if(s.nextChordLines&&s.nextChordLines.length){$('nextt').innerHTML=chordHTML(s.nextChordLines)}else{$('nextt').textContent=s.next||'—'}
+if(s.key)$('ng').textContent+=' · KEY '+s.key;
 $('ng').textContent=s.nextGroup?'NEXT • '+s.nextGroup.toUpperCase():'NEXT';$('notes').textContent=s.notes||'';
 $('msg').style.display=s.message?'block':'none';$('msg').textContent=s.message||'';
 $('timers').innerHTML=(s.timers||[]).map(t=>`<div class="t"><small>${t.name}</small><b style="color:${t.value.startsWith('-')?'#ef4444':'#fff'}">${t.value}</b></div>`).join('')}catch(e){}}

@@ -12,6 +12,8 @@
 		076818DAF875B34E1F0E53B3 /* HardwareSinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADCD742F642B2B30318EEE7 /* HardwareSinks.swift */; };
 		0F8B336FCC17A312455AA62D /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92687044A1286889831F2FBF /* MIDIManager.swift */; };
 		114B034FD593637987CE0CE8 /* ScripturePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CBC870DFA2660D3963391D4 /* ScripturePanel.swift */; };
+		1A39E5D5293F57F3112FEB00 /* Chord.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECBE3423026A5718DDEA8240 /* Chord.swift */; };
+		20A89CC3363CF3BBFB6C7B9C /* ChordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F60025706F39AF051B6BF65 /* ChordTests.swift */; };
 		2A52B96C4377476D1D84AD2D /* PlanningCenterSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522D5FF9DBAD9A4A4C0721C5 /* PlanningCenterSync.swift */; };
 		2CD832EEDB344DF98AE2CB01 /* RemoteServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35AF2ACA368E26BC819183E /* RemoteServer.swift */; };
 		39898430737DF5118AE7E692 /* MediaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACAF51701B2325A3FB29B97 /* MediaEngine.swift */; };
@@ -36,6 +38,7 @@
 		94E02BFE9B3CF91EE0385536 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041E10D972E1F269AF9C88A6 /* SettingsView.swift */; };
 		96D45EF09AE6E9728F9308CB /* RemotePages.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A3FA73A6C168D62DD54BAF /* RemotePages.swift */; };
 		9BAAED2839CD4843DB7A8DA1 /* CaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54296DA840CAE28E08BA9B2F /* CaptureManager.swift */; };
+		A7156BF7ACB5ADE1F9FC95E4 /* ChordMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D27083B701E43EC3B33BF15F /* ChordMatcher.swift */; };
 		A7E7DFFB1E8DE9DD0FAE0318 /* VolunteerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC19D78C46BA6CF09E29A9A9 /* VolunteerView.swift */; };
 		A8BD27BFA409A8CA8F21BC22 /* Common.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8000FF3A30A85C0CA339C3 /* Common.swift */; };
 		ADA8C9A140CDBDA404315D52 /* BibleBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC7B86F5D9DCCC790FC50BF4 /* BibleBooks.swift */; };
@@ -49,6 +52,8 @@
 		CFB3F08B4416B6B59578E58A /* ShowPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D4875F3D41B3F5E0E8F7FD /* ShowPanels.swift */; };
 		D4732FA5F397170C6E4AE7C5 /* BibleReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF063365AC269E37FF5B421 /* BibleReference.swift */; };
 		D64145C379C49D0A35DE581C /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2F72A8716D1BC0A0334763 /* SeedData.swift */; };
+		DD9664C9E3B5678D1560CA9A /* ChordChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CA72C58F30115729EA86872 /* ChordChart.swift */; };
+		E1E6F498F4189B218FF9ECB6 /* ChordEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AFA21F2FF47B8B3D1348D87 /* ChordEditor.swift */; };
 		E79655286757F68B9C01D388 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB52D76879331310C09D2E5 /* AppModel.swift */; };
 		EF595CEFABB6B5A565F04D3E /* PlanningCenterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AC2166BED083561FC06EA51 /* PlanningCenterClient.swift */; };
 		F051BCB828A42A0D15AAB935 /* ScriptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58733FC4F4B261E110984BA2 /* ScriptureService.swift */; };
@@ -72,6 +77,7 @@
 		026BA1E3ED44965751E9C096 /* LiveFrames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFrames.swift; sourceTree = "<group>"; };
 		041E10D972E1F269AF9C88A6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		0759EB89B140117A919CB57C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0CA72C58F30115729EA86872 /* ChordChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordChart.swift; sourceTree = "<group>"; };
 		0EE92645FE516CCFD116F3B5 /* BibleProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleProviders.swift; sourceTree = "<group>"; };
 		1D2F72A8716D1BC0A0334763 /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
 		1EB430595558DC092AC74E6B /* BrowserController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserController.swift; sourceTree = "<group>"; };
@@ -82,6 +88,7 @@
 		2CC0642F9D535145E87507EE /* SlideCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideCanvas.swift; sourceTree = "<group>"; };
 		337A3269E47126DC851115EE /* Lumen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumen.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3531FE66E808C5BF721C5245 /* LumenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenTests.swift; sourceTree = "<group>"; };
+		3AFA21F2FF47B8B3D1348D87 /* ChordEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordEditor.swift; sourceTree = "<group>"; };
 		3EE0FA9A3AB5D5ABF18EEC15 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		43F3B58D045D2AED57BDBE8E /* LMNDI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMNDI.h; sourceTree = "<group>"; };
 		44BFC6AF4162C3FEEF1FA239 /* SlideGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideGrid.swift; sourceTree = "<group>"; };
@@ -102,6 +109,7 @@
 		6BB52D76879331310C09D2E5 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		76D4875F3D41B3F5E0E8F7FD /* ShowPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowPanels.swift; sourceTree = "<group>"; };
 		7A5407BE081D57931D9CFE35 /* LivePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePanel.swift; sourceTree = "<group>"; };
+		7F60025706F39AF051B6BF65 /* ChordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordTests.swift; sourceTree = "<group>"; };
 		81309530E47B5A000C22F1F2 /* LMDeckLink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMDeckLink.h; sourceTree = "<group>"; };
 		84CA4FCC1FF37F12F092CAF5 /* ListenPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenPanel.swift; sourceTree = "<group>"; };
 		87EF32918A0E39FA3B5E2525 /* LumenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenApp.swift; sourceTree = "<group>"; };
@@ -117,11 +125,13 @@
 		BC0BC34B7782A895F701B13B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C1D20AFBAAB0477E14752FE4 /* ScriptureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureDetector.swift; sourceTree = "<group>"; };
 		CC7B86F5D9DCCC790FC50BF4 /* BibleBooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleBooks.swift; sourceTree = "<group>"; };
+		D27083B701E43EC3B33BF15F /* ChordMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordMatcher.swift; sourceTree = "<group>"; };
 		DCCE2DD61C82F610C4F9C75C /* LyricParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricParser.swift; sourceTree = "<group>"; };
 		DFCBB8EC6CB6A962B64E1BA8 /* Lumen-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Lumen-Bridging-Header.h"; sourceTree = "<group>"; };
 		E35AF2ACA368E26BC819183E /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
 		EC19D78C46BA6CF09E29A9A9 /* VolunteerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolunteerView.swift; sourceTree = "<group>"; };
 		EC4B10F45FC983325AD09AFA /* ListeningService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningService.swift; sourceTree = "<group>"; };
+		ECBE3423026A5718DDEA8240 /* Chord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chord.swift; sourceTree = "<group>"; };
 		ECF063365AC269E37FF5B421 /* BibleReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleReference.swift; sourceTree = "<group>"; };
 		F6A3FA73A6C168D62DD54BAF /* RemotePages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemotePages.swift; sourceTree = "<group>"; };
 		FAD5E41ED42F717D0FE8D18B /* TimerRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerRuntime.swift; sourceTree = "<group>"; };
@@ -147,6 +157,16 @@
 			path = Panels;
 			sourceTree = "<group>";
 		};
+		326D630A22137AB1A18A4B25 /* Chords */ = {
+			isa = PBXGroup;
+			children = (
+				ECBE3423026A5718DDEA8240 /* Chord.swift */,
+				0CA72C58F30115729EA86872 /* ChordChart.swift */,
+				D27083B701E43EC3B33BF15F /* ChordMatcher.swift */,
+			);
+			path = Chords;
+			sourceTree = "<group>";
+		};
 		3D6C9A073723A54628361039 = {
 			isa = PBXGroup;
 			children = (
@@ -160,6 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				8282FB2E9DF101FEDCB6CC93 /* Bible */,
+				326D630A22137AB1A18A4B25 /* Chords */,
 				A28FF04277779F403ADD3264 /* Import */,
 				A0F583C6C093EE658422E098 /* Lyrics */,
 				D463A9A770495948D8742BAF /* MIDI */,
@@ -334,6 +355,7 @@
 		C3316CAB852D28887A24F55A /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				7F60025706F39AF051B6BF65 /* ChordTests.swift */,
 				3531FE66E808C5BF721C5245 /* LumenTests.swift */,
 			);
 			path = Tests;
@@ -371,6 +393,7 @@
 			isa = PBXGroup;
 			children = (
 				46566F45EBFC92B389CCD626 /* ActionListEditor.swift */,
+				3AFA21F2FF47B8B3D1348D87 /* ChordEditor.swift */,
 				687315DB262F0F413350B565 /* PresentationEditor.swift */,
 				450980EAE2351DF3A4F969DF /* ThemeEditor.swift */,
 			);
@@ -485,6 +508,10 @@
 				D4732FA5F397170C6E4AE7C5 /* BibleReference.swift in Sources */,
 				02C072360F8DB238C41E7DEB /* BrowserController.swift in Sources */,
 				9BAAED2839CD4843DB7A8DA1 /* CaptureManager.swift in Sources */,
+				1A39E5D5293F57F3112FEB00 /* Chord.swift in Sources */,
+				DD9664C9E3B5678D1560CA9A /* ChordChart.swift in Sources */,
+				E1E6F498F4189B218FF9ECB6 /* ChordEditor.swift in Sources */,
+				A7156BF7ACB5ADE1F9FC95E4 /* ChordMatcher.swift in Sources */,
 				A8BD27BFA409A8CA8F21BC22 /* Common.swift in Sources */,
 				73A47A27986A055C37257A2E /* ContentView.swift in Sources */,
 				076818DAF875B34E1F0E53B3 /* HardwareSinks.swift in Sources */,
@@ -533,6 +560,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				20A89CC3363CF3BBFB6C7B9C /* ChordTests.swift in Sources */,
 				5361D97E8BB09178532D2CD3 /* LumenTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

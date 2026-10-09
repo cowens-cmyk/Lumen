@@ -229,7 +229,17 @@ enum RemoteAPI {
     static func stage(_ app: AppModel) -> [String: Any] {
         guard let screen = app.store.data.screens.first(where: { $0.role == .stage }) ?? app.store.data.screens.first else { return [:] }
         let s = app.outputs.stageSnapshot(for: screen)
-        return ["current": s.current, "next": s.next, "nextGroup": s.nextGroup, "clock": s.clock, "notes": s.notes,
+        let style = s.layout.chordStyle ?? .nashville
+        func chordLines(_ text: String, _ chords: [ChordPlacement]) -> [[[String: String]]] {
+            guard s.layout.showChords != false, !chords.isEmpty else { return [] }
+            return text.components(separatedBy: "\n").enumerated().map { i, line in
+                ChordLayout.segments(line: line, chords: chords.filter { $0.line == i }).map {
+                    ["c": $0.chord.map { ChordLayout.label($0, key: s.key, style: style) } ?? "", "t": $0.text]
+                }
+            }
+        }
+        return ["current": s.current, "currentChords": chordLines(s.current, s.currentChords),
+                "nextChordLines": chordLines(s.next, s.nextChords), "key": s.key ?? "", "next": s.next, "nextGroup": s.nextGroup, "clock": s.clock, "notes": s.notes,
                 "message": s.message ?? "", "timers": s.timers.map { ["name": $0.0, "value": $0.1] }]
     }
 

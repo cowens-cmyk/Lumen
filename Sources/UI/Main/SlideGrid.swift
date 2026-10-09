@@ -75,6 +75,13 @@ struct SlideGrid: View {
             Button { app.addToSelectedPlaylist(p.id) } label: { Image(systemName: "text.badge.plus") }
                 .help("Add to current playlist")
                 .disabled(app.selectedPlaylistID == nil)
+            if p.kind == .song {
+                Button { app.editorInitialMode = 4; app.editingPresentationID = p.id } label: {
+                    Label(p.key.map { "Chords · \($0)" } ?? "Chords", systemImage: "music.quarternote.3")
+                }
+                .disabled(store(p) == nil)
+                .help("Import a chord chart PDF and edit the Nashville numbers shown on the stage display")
+            }
             Button("Edit") { app.editingPresentationID = p.id }
                 .disabled(store(p) == nil)
             Slider(value: $thumbSize, in: 140...360).frame(width: 90).help("Thumbnail size")

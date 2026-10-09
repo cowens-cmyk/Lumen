@@ -20,6 +20,7 @@ struct PresentationEditor: View {
                     Text("Text").tag(0)
                     Text("Slides").tag(1)
                     Text("Arrangement").tag(2)
+                    Text("Chords").tag(4)
                     Text("Info").tag(3)
                 }
                 .pickerStyle(.segmented).fixedSize()
@@ -33,6 +34,7 @@ struct PresentationEditor: View {
                 switch mode {
                 case 1: slidesMode
                 case 2: ArrangementEditor(p: $p)
+                case 4: ChordEditor(p: $p, maxLines: theme.maxLinesPerSlide)
                 case 3: infoMode
                 default: textMode
                 }
@@ -40,10 +42,16 @@ struct PresentationEditor: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 980, minHeight: 680)
+        .onChange(of: mode) { old, new in
+            if old == 0 { applyText() }
+            if new == 0 { lyricText = LyricParser.text(for: p) }
+        }
         .onAppear {
             guard !loaded, let found = app.store.presentation(presentationID) else { return }
             p = found
             lyricText = LyricParser.text(for: found)
+            mode = app.editorInitialMode
+            app.editorInitialMode = 0
             loaded = true
         }
     }

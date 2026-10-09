@@ -27,6 +27,8 @@ final class AppModel {
     var toast: String?
     var showScreensEditor = false
     var editingPresentationID: UUID?
+    /// Which tab the presentation editor opens on (4 = Chords).
+    var editorInitialMode = 0
 
     init() {
         let store = LibraryStore()

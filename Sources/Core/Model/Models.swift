@@ -110,6 +110,19 @@ struct Slide: Identifiable, Codable, Hashable {
     var actions: [SlideAction] = []
     var enabled: Bool = true
     var themeOverride: UUID? = nil
+    /// Chords placed over this slide's lyrics, stored as letter names (Nashville numbers are derived from the song key).
+    /// Optional so libraries saved before chord support still decode.
+    var chords: [ChordPlacement]? = nil
+}
+
+/// One chord sitting over a character of a slide line.
+struct ChordPlacement: Codable, Hashable {
+    /// Line within the slide text (0-based, split on "\n").
+    var line: Int
+    /// Character offset within that line where the chord lands.
+    var index: Int
+    /// Letter-name chord as written on the chart, e.g. "D/F#", "Em7", "Csus2".
+    var chord: String
 }
 
 struct SlideGroup: Identifiable, Codable, Hashable {
@@ -154,6 +167,8 @@ struct Presentation: Identifiable, Codable, Hashable {
     var pcoUpdatedAt: String? = nil
     /// When true, Planning Center sync never overwrites local lyric edits.
     var lockedFromSync = false
+    /// Song key for Nashville numbers, e.g. "G", "Bb", "Em". Nil = unknown (stage shows letters).
+    var key: String? = nil
     var updatedAt = Date()
 
     /// The slides in arrangement order (one entry per time it's shown).
@@ -479,6 +494,18 @@ struct ServiceTimer: Identifiable, Codable, Hashable {
 
 // MARK: - Stage
 
+enum ChordStyle: String, Codable, CaseIterable, Identifiable {
+    case nashville, letters, both
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .nashville: "Nashville Numbers"
+        case .letters: "Chord Letters"
+        case .both: "Numbers + Letters"
+        }
+    }
+}
+
 struct StageLayout: Identifiable, Codable, Hashable {
     var id = UUID()
     var name: String
@@ -492,6 +519,10 @@ struct StageLayout: Identifiable, Codable, Hashable {
     var background = RGBA.black
     var currentColor = RGBA.white
     var nextColor = RGBA(hex: "#FACC15")
+    /// Show chords above lyrics (optional so older libraries decode).
+    var showChords: Bool? = nil
+    var chordStyle: ChordStyle? = nil
+    var chordColor: RGBA? = nil
 }
 
 // MARK: - Playlists & service templates

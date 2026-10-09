@@ -127,7 +127,7 @@ final class OutputManager {
 
         if screen.role == .stage {
             let snap = stageSnapshot(for: screen)
-            let key = "\(snap.current)|\(snap.next)|\(snap.clock)|\(snap.timers.map(\.1))|\(snap.message ?? "")|\(snap.notes)|\(snap.layout.hashValue)"
+            let key = "\(snap.current)|\(snap.currentChords.hashValue)|\(snap.nextChords.hashValue)|\(snap.key ?? "")|\(snap.next)|\(snap.clock)|\(snap.timers.map(\.1))|\(snap.message ?? "")|\(snap.notes)|\(snap.layout.hashValue)"
             scene.slide = cached(&slideCache, screen.id, key, size: size, opaque: true) { StageCanvas(s: snap) }
             scene.slideKey = key
             scene.transition = 0
@@ -194,7 +194,10 @@ final class OutputManager {
         return StageSnapshot(
             layout: layout,
             current: engine.currentSlide.map { engine.resolveTokens($0.slide.text) } ?? "",
+            currentChords: engine.currentSlide?.slide.chords ?? [],
             next: next?.slide.text ?? "",
+            nextChords: next?.slide.chords ?? [],
+            key: engine.livePresentation?.key,
             nextGroup: next?.groupName ?? "",
             notes: engine.currentSlide?.slide.notes ?? "",
             clock: tf.string(from: engine.now),
