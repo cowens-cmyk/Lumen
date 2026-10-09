@@ -8,6 +8,24 @@ Download `Lumen-<version>.dmg` from the GitHub release, open it, and drag Lumen 
 
 To build a DMG yourself, run `Scripts/make_dmg.sh`. It writes `dist/Lumen-<version>.dmg`, and notarizes it automatically if a `lumen-notary` notarytool profile is saved on the Mac (see the comment at the top of the script).
 
+## Updates
+
+Lumen updates itself from this GitHub repository, so nobody downloads DMGs after the first install.
+
+- **Where it shows up:** an orange **Update** button appears in the toolbar when a newer version exists (checked at launch). You can also use **Lumen ▸ Check for Updates…** or **Setup → General → Updates**.
+- **It never installs by itself.** You click Update, confirm, and Lumen downloads the release, checks its checksum and that it's signed by Hope Church's Developer ID, swaps itself in place and reopens. If something is on screen it warns you and defaults to *Not Now*, because updating blanks the outputs for several seconds.
+- **Private repo:** the check needs a GitHub login. If `gh auth login` is set up on the Mac, that's used automatically. Otherwise paste a fine-grained token (read-only *Contents* access to this repo) into Setup → General → Updates. It's stored in the Keychain.
+- **Mac with DeckLink/NDI SDKs:** a downloaded release is built without those SDKs, so it can't drive DeckLink or NDI. On that Mac, clone the repo and run `./Scripts/update.sh` once (it builds with the local SDKs and installs to /Applications). From then on Lumen sees the git checkout it was built from and updates by **pulling and rebuilding** (in a Terminal window) instead of downloading, so DeckLink and NDI keep working.
+- **Your songs are safe:** the first time a new version opens your library, Lumen copies the old one to `~/Library/Application Support/Lumen/Backups/`. `LibraryCompatibilityTests` guards the saved format. When adding fields to the data model, make them `Optional`.
+
+### Publishing a new version
+
+```bash
+./Scripts/release.sh 0.3.0 "What changed"
+```
+
+That bumps the version, builds the signed DMG, commits, tags, pushes, and creates the GitHub release with the DMG attached. Every Mac then offers the update.
+
 ## Build
 
 ```bash

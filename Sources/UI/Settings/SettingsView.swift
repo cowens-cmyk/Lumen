@@ -730,6 +730,7 @@ struct GeneralSettings: View {
             } header: { Text("Calendar") } footer: {
                 Text("Add lines like “lumen: macro Walk In”, “lumen: slide Announcements 2”, “lumen: look Stream Takeover” or “lumen: timer Service Countdown” to an event's notes. They run when the event starts.")
             }
+            UpdatesSettingsSection()
             Section("Library") {
                 Text(app.store.folder.path).font(.caption.monospaced()).textSelection(.enabled)
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([app.store.folder]) }

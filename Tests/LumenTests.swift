@@ -178,3 +178,25 @@ final class SchedulerTests: XCTestCase {
         XCTAssertEqual(TimerRuntime.format(3725), "1:02:05")
     }
 }
+
+/// Auto-updates install new versions over old libraries. Any change to the saved format must keep this passing:
+/// add new fields as Optional (or with custom decoding) so a library saved by an older Lumen still opens.
+final class LibraryCompatibilityTests: XCTestCase {
+    func testLibrarySavedByOlderVersionStillDecodes() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "library-0.2.0", withExtension: "json"))
+        let data = try Data(contentsOf: url)
+        let lib = try JSONDecoder.lumen.decode(LibraryData.self, from: data)
+        XCTAssertFalse(lib.themes.isEmpty)
+        XCTAssertEqual(lib.presentations.first?.key, "G")
+        XCTAssertEqual(lib.presentations.first?.groups.first?.slides.first?.chords?.first?.chord, "G")
+    }
+
+    @MainActor func testVersionChangeBacksUpLibrary() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try Data("{\"old\":true}".utf8).write(to: dir.appendingPathComponent("library.json"))
+        _ = LibraryStore(folder: dir)   // unreadable file is preserved, and the version change is backed up
+        let backups = try FileManager.default.contentsOfDirectory(atPath: dir.appendingPathComponent("Backups").path)
+        XCTAssertTrue(backups.contains { $0.hasPrefix("library-unknown-before-") })
+    }
+}

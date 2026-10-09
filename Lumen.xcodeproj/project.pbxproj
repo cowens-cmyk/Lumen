@@ -12,12 +12,14 @@
 		076818DAF875B34E1F0E53B3 /* HardwareSinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADCD742F642B2B30318EEE7 /* HardwareSinks.swift */; };
 		0F8B336FCC17A312455AA62D /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92687044A1286889831F2FBF /* MIDIManager.swift */; };
 		114B034FD593637987CE0CE8 /* ScripturePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CBC870DFA2660D3963391D4 /* ScripturePanel.swift */; };
+		12059CE6E3B06229C81CA470 /* UpdateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D926CEAF700771EAE450A67B /* UpdateViews.swift */; };
 		1A39E5D5293F57F3112FEB00 /* Chord.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECBE3423026A5718DDEA8240 /* Chord.swift */; };
 		20A89CC3363CF3BBFB6C7B9C /* ChordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F60025706F39AF051B6BF65 /* ChordTests.swift */; };
 		2A52B96C4377476D1D84AD2D /* PlanningCenterSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522D5FF9DBAD9A4A4C0721C5 /* PlanningCenterSync.swift */; };
 		2CD832EEDB344DF98AE2CB01 /* RemoteServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35AF2ACA368E26BC819183E /* RemoteServer.swift */; };
 		376400A74808E5EB8EF7FB56 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17D2FE9BF280214FDEF70D34 /* Assets.xcassets */; };
 		39898430737DF5118AE7E692 /* MediaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACAF51701B2325A3FB29B97 /* MediaEngine.swift */; };
+		42A59EC411038CBF5C139A72 /* library-0.2.0.json in Resources */ = {isa = PBXBuildFile; fileRef = 057AB1E930A6172D550E62C4 /* library-0.2.0.json */; };
 		43FE731B44957A48C09B3DE4 /* StageCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62A26C26891DD674F2434716 /* StageCanvas.swift */; };
 		47BF4E7B34930971CF0B9D95 /* LMDeckLink.mm in Sources */ = {isa = PBXBuildFile; fileRef = 470D9DAA1C72E244BA569699 /* LMDeckLink.mm */; };
 		5361D97E8BB09178532D2CD3 /* LumenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3531FE66E808C5BF721C5245 /* LumenTests.swift */; };
@@ -59,6 +61,7 @@
 		EF595CEFABB6B5A565F04D3E /* PlanningCenterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AC2166BED083561FC06EA51 /* PlanningCenterClient.swift */; };
 		F051BCB828A42A0D15AAB935 /* ScriptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58733FC4F4B261E110984BA2 /* ScriptureService.swift */; };
 		F4979F79C70D290D929BDB28 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE0FA9A3AB5D5ABF18EEC15 /* Settings.swift */; };
+		F5312AB5A0AE803C112241F6 /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2DF820E6F0A4EE3623E8A6 /* UpdateManager.swift */; };
 		F6D90D73FCDC661C906C6B2C /* Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98BC8F33EA2E0C3644375D88 /* Sidebar.swift */; };
 		FC33C81D008F3E306B531025 /* LivePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5407BE081D57931D9CFE35 /* LivePanel.swift */; };
 		FD3EAE4A198C5D7A335B62D1 /* ListeningService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC4B10F45FC983325AD09AFA /* ListeningService.swift */; };
@@ -77,6 +80,7 @@
 /* Begin PBXFileReference section */
 		026BA1E3ED44965751E9C096 /* LiveFrames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFrames.swift; sourceTree = "<group>"; };
 		041E10D972E1F269AF9C88A6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		057AB1E930A6172D550E62C4 /* library-0.2.0.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "library-0.2.0.json"; sourceTree = "<group>"; };
 		0759EB89B140117A919CB57C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0CA72C58F30115729EA86872 /* ChordChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordChart.swift; sourceTree = "<group>"; };
 		0EE92645FE516CCFD116F3B5 /* BibleProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleProviders.swift; sourceTree = "<group>"; };
@@ -126,8 +130,10 @@
 		AE8CEA1CBF0990FA5AE1ED08 /* LMNDI.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMNDI.mm; sourceTree = "<group>"; };
 		BC0BC34B7782A895F701B13B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C1D20AFBAAB0477E14752FE4 /* ScriptureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureDetector.swift; sourceTree = "<group>"; };
+		CB2DF820E6F0A4EE3623E8A6 /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
 		CC7B86F5D9DCCC790FC50BF4 /* BibleBooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleBooks.swift; sourceTree = "<group>"; };
 		D27083B701E43EC3B33BF15F /* ChordMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChordMatcher.swift; sourceTree = "<group>"; };
+		D926CEAF700771EAE450A67B /* UpdateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateViews.swift; sourceTree = "<group>"; };
 		DCCE2DD61C82F610C4F9C75C /* LyricParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricParser.swift; sourceTree = "<group>"; };
 		DFCBB8EC6CB6A962B64E1BA8 /* Lumen-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Lumen-Bridging-Header.h"; sourceTree = "<group>"; };
 		E35AF2ACA368E26BC819183E /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
@@ -140,10 +146,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		0818F10A9E5FF2197AAB0576 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				057AB1E930A6172D550E62C4 /* library-0.2.0.json */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
 		142CC8794FD548F1C22F1DD0 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
 				041E10D972E1F269AF9C88A6 /* SettingsView.swift */,
+				D926CEAF700771EAE450A67B /* UpdateViews.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -350,6 +365,7 @@
 				BB2A7C9E0517471F056BD522 /* Model */,
 				6E883EA8EA6D23B3B1728AF1 /* Outputs */,
 				537160D2E7E7485C9196D2E9 /* Rendering */,
+				D2B37A15E800A99BEA394ACB /* Update */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -359,6 +375,7 @@
 			children = (
 				7F60025706F39AF051B6BF65 /* ChordTests.swift */,
 				3531FE66E808C5BF721C5245 /* LumenTests.swift */,
+				0818F10A9E5FF2197AAB0576 /* Fixtures */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -370,6 +387,14 @@
 				522D5FF9DBAD9A4A4C0721C5 /* PlanningCenterSync.swift */,
 			);
 			path = PlanningCenter;
+			sourceTree = "<group>";
+		};
+		D2B37A15E800A99BEA394ACB /* Update */ = {
+			isa = PBXGroup;
+			children = (
+				CB2DF820E6F0A4EE3623E8A6 /* UpdateManager.swift */,
+			);
+			path = Update;
 			sourceTree = "<group>";
 		};
 		D463A9A770495948D8742BAF /* MIDI */ = {
@@ -432,6 +457,7 @@
 			buildConfigurationList = 16932A0D91F6D85B9C2F2B98 /* Build configuration list for PBXNativeTarget "LumenTests" */;
 			buildPhases = (
 				19CB0F8005A92715467B8534 /* Sources */,
+				0D0FAD6419D9AFDC4701ED6A /* Resources */,
 			);
 			buildRules = (
 			);
@@ -501,6 +527,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0D0FAD6419D9AFDC4701ED6A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42A59EC411038CBF5C139A72 /* library-0.2.0.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2F1ADCC8D621EDFBF2163C5B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -567,6 +601,8 @@
 				43FE731B44957A48C09B3DE4 /* StageCanvas.swift in Sources */,
 				832E7F7300BF36E9690CF1E6 /* ThemeEditor.swift in Sources */,
 				CC0590011476D2A0AEB8C107 /* TimerRuntime.swift in Sources */,
+				F5312AB5A0AE803C112241F6 /* UpdateManager.swift in Sources */,
+				12059CE6E3B06229C81CA470 /* UpdateViews.swift in Sources */,
 				A7E7DFFB1E8DE9DD0FAE0318 /* VolunteerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -690,7 +726,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/App/Lumen.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -705,7 +741,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreFoundation,
@@ -789,7 +825,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/App/Lumen.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -804,7 +840,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreFoundation,

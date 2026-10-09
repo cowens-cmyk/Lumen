@@ -21,6 +21,9 @@ struct LumenApp: App {
         }
         .windowToolbarStyle(.unifiedCompact)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { Task { await app.updates.checkAndPrompt() } }
+            }
             CommandGroup(replacing: .newItem) {
                 Button("New Song") { _ = app.newPresentation(kind: .song) }.keyboardShortcut("n")
                 Button("New Presentation") { _ = app.newPresentation(kind: .generic) }.keyboardShortcut("n", modifiers: [.command, .shift])

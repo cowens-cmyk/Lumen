@@ -56,8 +56,27 @@ final class LibraryStore {
             }
             data = SeedData.make()
         }
+        backUpIfVersionChanged()
         ensureDefaults()
         if !fm.fileExists(atPath: file.path) { saveNow() }
+    }
+
+    /// Auto-updates must never cost anyone their songs: the first time a new version opens the library,
+    /// keep a copy of exactly what the previous version saved (the newest 10 are kept).
+    private func backUpIfVersionChanged() {
+        let fm = FileManager.default
+        let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+        let backups = folder.appendingPathComponent("Backups", isDirectory: true)
+        let marker = backups.appendingPathComponent(".last-version")
+        let last = (try? String(contentsOf: marker, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard last != current, fm.fileExists(atPath: fileURL.path) else { return }
+        try? fm.createDirectory(at: backups, withIntermediateDirectories: true)
+        let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
+        try? fm.copyItem(at: fileURL, to: backups.appendingPathComponent("library-\(last ?? "unknown")-before-\(current)-\(stamp).json"))
+        try? current.write(to: marker, atomically: true, encoding: .utf8)
+        let old = ((try? fm.contentsOfDirectory(at: backups, includingPropertiesForKeys: nil)) ?? [])
+            .filter { $0.lastPathComponent.hasPrefix("library-") }.sorted { $0.lastPathComponent > $1.lastPathComponent }
+        old.dropFirst(10).forEach { try? fm.removeItem(at: $0) }
     }
 
     /// Fills in anything a fresh or older library is missing.

@@ -75,6 +75,7 @@ struct MainToolbar: ToolbarContent {
             LookPicker().frame(width: 220)
         }
         ToolbarItemGroup(placement: .primaryAction) {
+            UpdateToolbarButton()
             ListenToolbarIndicator()
             Button {
                 Task { await app.pco.sync() }

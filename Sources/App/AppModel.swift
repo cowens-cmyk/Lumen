@@ -19,6 +19,7 @@ final class AppModel {
     let remote: RemoteServer
     let scheduler: Scheduler
     let listening: ListeningService
+    let updates: UpdateManager
 
     // UI state
     var selectedPresentationID: UUID?
@@ -45,6 +46,7 @@ final class AppModel {
         remote = RemoteServer()
         scheduler = Scheduler(store: store, engine: engine)
         listening = ListeningService()
+        updates = UpdateManager()
 
         engine.media = media
         engine.capture = capture
@@ -53,6 +55,7 @@ final class AppModel {
         engine.midi = midi
         engine.onChange = { [weak self] in self?.outputs.update() }
         remote.app = self
+        updates.app = self
         listening.engine = engine
         listening.settings = { [weak store] in store?.data.settings ?? AppSettings() }
 
@@ -68,6 +71,7 @@ final class AppModel {
         if store.data.settings.remoteEnabled { remote.start(port: store.data.settings.remotePort) }
         scheduler.start()
         pco.startAutoSync()
+        updates.checkAtLaunch()
         if pco.isConfigured { Task { await pco.sync() } }
     }
 

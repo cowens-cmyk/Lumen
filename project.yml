@@ -28,6 +28,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.video
+        LumenSourcePath: $(SRCROOT)
         NSHumanReadableCopyright: "Hope Church"
         NSMicrophoneUsageDescription: Lumen listens to the worship leader or pastor to follow lyrics and detect scripture references.
         NSSpeechRecognitionUsageDescription: Lumen transcribes audio on this Mac to follow lyrics and detect scripture references.

@@ -1,0 +1,1141 @@
+{
+  "looks" : [
+    {
+      "id" : "08FF4FB7-06B0-4E74-802F-24716276BD83",
+      "name" : "Service",
+      "screens" : [
+        "BFDE3476-9549-4DEF-8D31-9297C01A3AB8",
+        {
+          "defaultMode" : "lowerThird",
+          "layers" : {
+            "background" : false,
+            "liveVideo" : false,
+            "messages" : false,
+            "props" : true,
+            "slide" : true
+          },
+          "modeByKind" : [
+            "sermon",
+            "fullSlide",
+            "announcement",
+            "fullSlide",
+            "media",
+            "fullSlide"
+          ],
+          "themeByKind" : [
+            "scripture",
+            "FC7ABBF6-3B42-46E5-A7F7-4F7A1CCAC7BD",
+            "song",
+            "101BFE4E-90AE-4F8A-B898-D40119864266"
+          ]
+        },
+        "5FD1D2D6-FDE6-452D-A894-B855038D4A72",
+        {
+          "defaultMode" : "fullSlide",
+          "layers" : {
+            "background" : true,
+            "liveVideo" : true,
+            "messages" : true,
+            "props" : true,
+            "slide" : true
+          },
+          "modeByKind" : [
+
+          ],
+          "themeByKind" : [
+
+          ]
+        }
+      ]
+    },
+    {
+      "id" : "C6120CA8-5574-41CB-B0C9-68B1E8D25B5D",
+      "name" : "Stream Takeover",
+      "screens" : [
+        "5FD1D2D6-FDE6-452D-A894-B855038D4A72",
+        {
+          "defaultMode" : "fullSlide",
+          "layers" : {
+            "background" : true,
+            "liveVideo" : true,
+            "messages" : true,
+            "props" : true,
+            "slide" : true
+          },
+          "modeByKind" : [
+
+          ],
+          "themeByKind" : [
+
+          ]
+        },
+        "BFDE3476-9549-4DEF-8D31-9297C01A3AB8",
+        {
+          "defaultMode" : "fullSlide",
+          "layers" : {
+            "background" : true,
+            "liveVideo" : true,
+            "messages" : true,
+            "props" : true,
+            "slide" : true
+          },
+          "modeByKind" : [
+
+          ],
+          "themeByKind" : [
+
+          ]
+        }
+      ]
+    },
+    {
+      "id" : "9065278D-BEF0-4207-BEBB-195C264047C0",
+      "name" : "Clean Stream",
+      "screens" : [
+        "BFDE3476-9549-4DEF-8D31-9297C01A3AB8",
+        {
+          "defaultMode" : "hidden",
+          "layers" : {
+            "background" : false,
+            "liveVideo" : false,
+            "messages" : false,
+            "props" : true,
+            "slide" : false
+          },
+          "modeByKind" : [
+
+          ],
+          "themeByKind" : [
+
+          ]
+        },
+        "5FD1D2D6-FDE6-452D-A894-B855038D4A72",
+        {
+          "defaultMode" : "fullSlide",
+          "layers" : {
+            "background" : true,
+            "liveVideo" : true,
+            "messages" : true,
+            "props" : true,
+            "slide" : true
+          },
+          "modeByKind" : [
+
+          ],
+          "themeByKind" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "macros" : [
+    {
+      "actions" : [
+        {
+          "clear" : {
+            "_0" : "slide"
+          }
+        },
+        {
+          "setLook" : {
+            "_0" : "08FF4FB7-06B0-4E74-802F-24716276BD83"
+          }
+        },
+        {
+          "startTimer" : {
+            "_0" : "FD4DB3EB-0492-4328-83DC-9D32F749DA83"
+          }
+        }
+      ],
+      "color" : {
+        "a" : 1,
+        "b" : 0.3686274509803922,
+        "g" : 0.7725490196078432,
+        "r" : 0.13333333333333333
+      },
+      "id" : "FDC08D4D-C384-42BD-80FD-FE2D5049CAB0",
+      "name" : "Walk In",
+      "symbol" : "figure.walk",
+      "volunteerVisible" : true
+    },
+    {
+      "actions" : [
+        {
+          "setLook" : {
+            "_0" : "C6120CA8-5574-41CB-B0C9-68B1E8D25B5D"
+          }
+        },
+        {
+          "resetTimer" : {
+            "_0" : "0342DB38-48B8-4460-AE44-50DE6A386C82"
+          }
+        },
+        {
+          "startTimer" : {
+            "_0" : "0342DB38-48B8-4460-AE44-50DE6A386C82"
+          }
+        },
+        {
+          "showProp" : {
+            "_0" : "3463E936-C411-4917-8B06-E49641A64823"
+          }
+        },
+        {
+          "sendMIDI" : {
+            "_0" : {
+              "channel" : 1,
+              "kind" : "noteOn",
+              "number" : 60,
+              "value" : 127
+            }
+          }
+        }
+      ],
+      "color" : {
+        "a" : 1,
+        "b" : 0.043137254901960784,
+        "g" : 0.6196078431372549,
+        "r" : 0.9607843137254902
+      },
+      "id" : "D4D6C492-432E-4CC5-B899-5DF5C1D4E4B6",
+      "name" : "Sermon Start",
+      "symbol" : "mic.fill",
+      "volunteerVisible" : true
+    },
+    {
+      "actions" : [
+        {
+          "setLook" : {
+            "_0" : "9065278D-BEF0-4207-BEBB-195C264047C0"
+          }
+        }
+      ],
+      "color" : {
+        "a" : 1,
+        "b" : 0.5450980392156862,
+        "g" : 0.4549019607843137,
+        "r" : 0.39215686274509803
+      },
+      "id" : "251D91EE-FB83-428B-AF4B-5D8392AA55D7",
+      "name" : "Camera Only",
+      "symbol" : "video.fill",
+      "volunteerVisible" : true
+    },
+    {
+      "actions" : [
+        {
+          "clear" : {
+            "_0" : "all"
+          }
+        },
+        {
+          "stopSlideshow" : {
+
+          }
+        }
+      ],
+      "color" : {
+        "a" : 1,
+        "b" : 0.26666666666666666,
+        "g" : 0.26666666666666666,
+        "r" : 0.9372549019607843
+      },
+      "id" : "F27BD665-56EC-4766-8EA6-4BE3C83659C1",
+      "name" : "Clear All",
+      "symbol" : "xmark.circle.fill",
+      "volunteerVisible" : true
+    }
+  ],
+  "midiMappings" : [
+
+  ],
+  "playlists" : [
+
+  ],
+  "presentations" : [
+    {
+      "arrangement" : [
+
+      ],
+      "author" : "",
+      "ccli" : "",
+      "copyright" : "",
+      "groups" : [
+        {
+          "color" : {
+            "a" : 1,
+            "b" : 0.9137254901960784,
+            "g" : 0.6470588235294118,
+            "r" : 0.054901960784313725
+          },
+          "id" : "D6F9B222-F64D-4388-9121-1ABA4E729EE5",
+          "name" : "Welcome",
+          "slides" : [
+            {
+              "actions" : [
+
+              ],
+              "chords" : [
+                {
+                  "chord" : "G",
+                  "index" : 0,
+                  "line" : 0
+                }
+              ],
+              "enabled" : true,
+              "id" : "436E5A64-F0A0-4A17-8ED0-FF80D4CAD5D6",
+              "label" : "",
+              "notes" : "",
+              "text" : "Welcome to Hope Church\nWe're glad you're here"
+            }
+          ]
+        }
+      ],
+      "id" : "F7988B70-4A5A-4145-BAB5-842A7202CEAB",
+      "key" : "G",
+      "kind" : "announcement",
+      "lockedFromSync" : false,
+      "name" : "Welcome",
+      "notes" : "",
+      "slideshow" : {
+        "enabled" : false,
+        "interval" : 8,
+        "loop" : true
+      },
+      "updatedAt" : "2026-10-09T14:03:13Z"
+    },
+    {
+      "arrangement" : [
+
+      ],
+      "author" : "",
+      "ccli" : "",
+      "copyright" : "",
+      "groups" : [
+
+      ],
+      "id" : "035978EF-137F-403D-B6C8-3F4F56B1EC13",
+      "kind" : "announcement",
+      "lockedFromSync" : false,
+      "name" : "Announcements",
+      "notes" : "",
+      "slideshow" : {
+        "enabled" : false,
+        "interval" : 8,
+        "loop" : true
+      },
+      "updatedAt" : "2026-10-09T14:03:13Z"
+    },
+    {
+      "arrangement" : [
+
+      ],
+      "author" : "",
+      "ccli" : "",
+      "copyright" : "",
+      "groups" : [
+
+      ],
+      "id" : "A4329F1C-D16F-4E47-81EF-3365A33AD2CB",
+      "kind" : "sermon",
+      "lockedFromSync" : false,
+      "name" : "Sermon",
+      "notes" : "",
+      "slideshow" : {
+        "enabled" : false,
+        "interval" : 8,
+        "loop" : true
+      },
+      "updatedAt" : "2026-10-09T14:03:13Z"
+    }
+  ],
+  "props" : [
+    {
+      "autoHideSeconds" : 8,
+      "id" : "3463E936-C411-4917-8B06-E49641A64823",
+      "kind" : "lowerThird",
+      "name" : "Speaker Name",
+      "style" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.043137254901960784,
+          "g" : 0.6196078431372549,
+          "r" : 0.9607843137254902
+        },
+        "align" : "leading",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 44,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : true,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "subtitle" : "Lead Pastor",
+      "title" : "Pastor Name"
+    },
+    {
+      "autoHideSeconds" : 0,
+      "id" : "2BA55C82-F9D5-4FA1-9769-59D33A886686",
+      "kind" : "lowerThird",
+      "name" : "Give Online",
+      "style" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.043137254901960784,
+          "g" : 0.6196078431372549,
+          "r" : 0.9607843137254902
+        },
+        "align" : "leading",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 44,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : true,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "subtitle" : "hopejc.org\/give",
+      "title" : "Give Online"
+    }
+  ],
+  "schedules" : [
+
+  ],
+  "screens" : [
+    {
+      "destinations" : [
+        {
+          "window" : {
+
+          }
+        }
+      ],
+      "enabled" : true,
+      "fps" : 30,
+      "height" : 1080,
+      "id" : "5FD1D2D6-FDE6-452D-A894-B855038D4A72",
+      "name" : "Audience",
+      "role" : "audience",
+      "width" : 1920
+    },
+    {
+      "destinations" : [
+
+      ],
+      "enabled" : true,
+      "fps" : 30,
+      "height" : 1080,
+      "id" : "BFDE3476-9549-4DEF-8D31-9297C01A3AB8",
+      "name" : "Livestream",
+      "role" : "stream",
+      "width" : 1920
+    },
+    {
+      "destinations" : [
+
+      ],
+      "enabled" : true,
+      "fps" : 30,
+      "height" : 1080,
+      "id" : "8B86450D-25CE-4896-B505-471730C18DFA",
+      "name" : "Stage",
+      "role" : "stage",
+      "stageLayoutID" : "2365B119-7655-4E3C-A598-1501A7C1321A",
+      "width" : 1920
+    }
+  ],
+  "settings" : {
+    "bibleMaxCharsPerSlide" : 260,
+    "bibleProvider" : "bibleAPIcom",
+    "bibleTranslation" : "kjv",
+    "bibleVersesPerSlide" : 1,
+    "calendarName" : "",
+    "calendarTriggersEnabled" : false,
+    "defaultLookID" : "08FF4FB7-06B0-4E74-802F-24716276BD83",
+    "defaultThemeByKind" : [
+      "song",
+      "A340C1AA-5F7A-471B-AF9E-199EE9D1A781",
+      "scripture",
+      "BD36B1A3-8521-4F5C-A757-90E97B48457A",
+      "sermon",
+      "39535C3C-4A84-4354-8DB7-70EE7D5F19C3",
+      "announcement",
+      "DEB68A24-882C-44DB-9A88-D14774FDD07A",
+      "generic",
+      "A340C1AA-5F7A-471B-AF9E-199EE9D1A781",
+      "media",
+      "A340C1AA-5F7A-471B-AF9E-199EE9D1A781"
+    ],
+    "listenInputDeviceUID" : "",
+    "lyricFollowAutoAdvance" : true,
+    "lyricFollowThreshold" : 0.62,
+    "midiEnabled" : true,
+    "midiOutputName" : "Lumen",
+    "pcoAppID" : "",
+    "pcoAutoSyncMinutes" : 10,
+    "pcoServiceTypeIDs" : [
+
+    ],
+    "pcoSyncDaysAhead" : 35,
+    "pcoTemplateID" : "C50FD455-0AB0-4CE9-915C-3B0D2FB56AE1",
+    "remoteEnabled" : true,
+    "remotePIN" : "",
+    "remotePort" : 8090,
+    "scriptureDetection" : true,
+    "speechLocale" : "en-US",
+    "startInVolunteerMode" : false,
+    "transitionSeconds" : 0.35,
+    "volunteerPIN" : "1234"
+  },
+  "stageLayouts" : [
+    {
+      "background" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "currentColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "id" : "2365B119-7655-4E3C-A598-1501A7C1321A",
+      "name" : "Worship Team",
+      "nextColor" : {
+        "a" : 1,
+        "b" : 0.08235294117647059,
+        "g" : 0.8,
+        "r" : 0.9803921568627451
+      },
+      "showClock" : true,
+      "showCurrent" : true,
+      "showMessage" : true,
+      "showNext" : true,
+      "showNotes" : false,
+      "textScale" : 1,
+      "timerIDs" : [
+        "FD4DB3EB-0492-4328-83DC-9D32F749DA83"
+      ]
+    },
+    {
+      "background" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "currentColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "id" : "962319D3-495C-47E8-9865-D0CFFD64B0CF",
+      "name" : "Speaker",
+      "nextColor" : {
+        "a" : 1,
+        "b" : 0.08235294117647059,
+        "g" : 0.8,
+        "r" : 0.9803921568627451
+      },
+      "showClock" : true,
+      "showCurrent" : true,
+      "showMessage" : true,
+      "showNext" : true,
+      "showNotes" : true,
+      "textScale" : 1,
+      "timerIDs" : [
+        "0342DB38-48B8-4460-AE44-50DE6A386C82"
+      ]
+    }
+  ],
+  "templates" : [
+    {
+      "id" : "C50FD455-0AB0-4CE9-915C-3B0D2FB56AE1",
+      "leadingPresentations" : [
+
+      ],
+      "name" : "Sunday Service",
+      "pcoServiceTypeID" : "",
+      "rules" : [
+        {
+          "id" : "8830E460-9797-475D-9B7D-1A23407EBE17",
+          "match" : "song",
+          "result" : {
+            "songLyrics" : {
+
+            }
+          },
+          "text" : ""
+        },
+        {
+          "id" : "C41E87FC-29FD-4537-B8ED-F54A025E0AD7",
+          "match" : "header",
+          "result" : {
+            "header" : {
+
+            }
+          },
+          "text" : ""
+        },
+        {
+          "id" : "522AD73B-EFDD-4E95-AC3E-56340FD47D66",
+          "match" : "titleContains",
+          "result" : {
+            "scripture" : {
+
+            }
+          },
+          "text" : "scripture"
+        },
+        {
+          "id" : "406792A5-D5C0-4CF2-A559-5F96B018DC0B",
+          "match" : "titleContains",
+          "result" : {
+            "scripture" : {
+
+            }
+          },
+          "text" : "reading"
+        },
+        {
+          "id" : "49756117-3F15-4C45-A58A-1A07A14B6FFC",
+          "match" : "titleContains",
+          "result" : {
+            "presentationNamed" : {
+              "_0" : "Sermon"
+            }
+          },
+          "text" : "sermon"
+        },
+        {
+          "id" : "403193AA-E1DE-4A8F-B676-E4EC5663D37F",
+          "match" : "titleContains",
+          "result" : {
+            "presentationNamed" : {
+              "_0" : "Sermon"
+            }
+          },
+          "text" : "message"
+        },
+        {
+          "id" : "76D9E9C8-91B6-4E6F-8059-FEF0FCB57F16",
+          "match" : "titleContains",
+          "result" : {
+            "presentationNamed" : {
+              "_0" : "Announcements"
+            }
+          },
+          "text" : "announcement"
+        },
+        {
+          "id" : "9917FF44-3193-4908-B7B2-C84471788850",
+          "match" : "titleContains",
+          "result" : {
+            "presentationNamed" : {
+              "_0" : "Welcome"
+            }
+          },
+          "text" : "welcome"
+        },
+        {
+          "id" : "1F40C0DA-5821-402E-B381-F373E2AABC17",
+          "match" : "media",
+          "result" : {
+            "placeholder" : {
+
+            }
+          },
+          "text" : ""
+        }
+      ],
+      "trailingPresentations" : [
+
+      ]
+    }
+  ],
+  "themes" : [
+    {
+      "align" : "center",
+      "autoFit" : true,
+      "background" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "bold" : true,
+      "fontName" : "Helvetica Neue",
+      "fontSize" : 76,
+      "id" : "A340C1AA-5F7A-471B-AF9E-199EE9D1A781",
+      "labelColor" : {
+        "a" : 0.8,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "labelSize" : 36,
+      "lineSpacing" : 8,
+      "lowerThird" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.043137254901960784,
+          "g" : 0.6196078431372549,
+          "r" : 0.9607843137254902
+        },
+        "align" : "leading",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 44,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : true,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "maxLinesPerSlide" : 2,
+      "name" : "Worship Lyrics",
+      "outlineColor" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "outlineWidth" : 0,
+      "padding" : 120,
+      "shadow" : true,
+      "showLabel" : false,
+      "textColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "uppercase" : false,
+      "vAlign" : "middle"
+    },
+    {
+      "align" : "leading",
+      "autoFit" : true,
+      "background" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "bold" : false,
+      "fontName" : "Georgia",
+      "fontSize" : 58,
+      "id" : "BD36B1A3-8521-4F5C-A757-90E97B48457A",
+      "labelColor" : {
+        "a" : 0.8,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "labelSize" : 36,
+      "lineSpacing" : 8,
+      "lowerThird" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.9725490196078431,
+          "g" : 0.7411764705882353,
+          "r" : 0.2196078431372549
+        },
+        "align" : "leading",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 38,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : true,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "maxLinesPerSlide" : 6,
+      "name" : "Scripture",
+      "outlineColor" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "outlineWidth" : 0,
+      "padding" : 140,
+      "shadow" : true,
+      "showLabel" : true,
+      "textColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "uppercase" : false,
+      "vAlign" : "middle"
+    },
+    {
+      "align" : "center",
+      "autoFit" : true,
+      "background" : {
+        "a" : 1,
+        "b" : 0.16470588235294117,
+        "g" : 0.09019607843137255,
+        "r" : 0.058823529411764705
+      },
+      "bold" : true,
+      "fontName" : "Avenir Next",
+      "fontSize" : 70,
+      "id" : "39535C3C-4A84-4354-8DB7-70EE7D5F19C3",
+      "labelColor" : {
+        "a" : 0.8,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "labelSize" : 36,
+      "lineSpacing" : 8,
+      "lowerThird" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.043137254901960784,
+          "g" : 0.6196078431372549,
+          "r" : 0.9607843137254902
+        },
+        "align" : "leading",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 44,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : true,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "maxLinesPerSlide" : 4,
+      "name" : "Sermon Points",
+      "outlineColor" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "outlineWidth" : 0,
+      "padding" : 120,
+      "shadow" : true,
+      "showLabel" : false,
+      "textColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "uppercase" : false,
+      "vAlign" : "middle"
+    },
+    {
+      "align" : "center",
+      "autoFit" : true,
+      "background" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "bold" : true,
+      "fontName" : "Avenir Next",
+      "fontSize" : 64,
+      "id" : "DEB68A24-882C-44DB-9A88-D14774FDD07A",
+      "labelColor" : {
+        "a" : 0.8,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "labelSize" : 36,
+      "lineSpacing" : 8,
+      "lowerThird" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.043137254901960784,
+          "g" : 0.6196078431372549,
+          "r" : 0.9607843137254902
+        },
+        "align" : "leading",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 44,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : true,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "maxLinesPerSlide" : 6,
+      "name" : "Announcements",
+      "outlineColor" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "outlineWidth" : 0,
+      "padding" : 120,
+      "shadow" : true,
+      "showLabel" : false,
+      "textColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "uppercase" : false,
+      "vAlign" : "middle"
+    },
+    {
+      "align" : "leading",
+      "autoFit" : true,
+      "background" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "bold" : false,
+      "fontName" : "Georgia",
+      "fontSize" : 40,
+      "id" : "FC7ABBF6-3B42-46E5-A7F7-4F7A1CCAC7BD",
+      "labelColor" : {
+        "a" : 0.8,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "labelSize" : 36,
+      "lineSpacing" : 8,
+      "lowerThird" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.9725490196078431,
+          "g" : 0.7411764705882353,
+          "r" : 0.2196078431372549
+        },
+        "align" : "leading",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 36,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : true,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "maxLinesPerSlide" : 2,
+      "name" : "Bible Lower Third",
+      "outlineColor" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "outlineWidth" : 0,
+      "padding" : 120,
+      "shadow" : true,
+      "showLabel" : true,
+      "textColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "uppercase" : false,
+      "vAlign" : "middle"
+    },
+    {
+      "align" : "center",
+      "autoFit" : true,
+      "background" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "bold" : true,
+      "fontName" : "Helvetica Neue",
+      "fontSize" : 44,
+      "id" : "101BFE4E-90AE-4F8A-B898-D40119864266",
+      "labelColor" : {
+        "a" : 0.8,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "labelSize" : 36,
+      "lineSpacing" : 8,
+      "lowerThird" : {
+        "accentColor" : {
+          "a" : 1,
+          "b" : 0.043137254901960784,
+          "g" : 0.6196078431372549,
+          "r" : 0.9607843137254902
+        },
+        "align" : "center",
+        "barColor" : {
+          "a" : 0.82,
+          "b" : 0.08,
+          "g" : 0.05,
+          "r" : 0.05
+        },
+        "bottomMargin" : 60,
+        "cornerRadius" : 14,
+        "fontSize" : 54,
+        "maxHeight" : 0.3,
+        "referenceSize" : 30,
+        "showReference" : false,
+        "sideMargin" : 120,
+        "textColor" : {
+          "a" : 1,
+          "b" : 1,
+          "g" : 1,
+          "r" : 1
+        }
+      },
+      "maxLinesPerSlide" : 2,
+      "name" : "Lyrics Lower Third",
+      "outlineColor" : {
+        "a" : 1,
+        "b" : 0,
+        "g" : 0,
+        "r" : 0
+      },
+      "outlineWidth" : 0,
+      "padding" : 120,
+      "shadow" : true,
+      "showLabel" : false,
+      "textColor" : {
+        "a" : 1,
+        "b" : 1,
+        "g" : 1,
+        "r" : 1
+      },
+      "uppercase" : false,
+      "vAlign" : "middle"
+    }
+  ],
+  "timers" : [
+    {
+      "allowOverrun" : true,
+      "id" : "FD4DB3EB-0492-4328-83DC-9D32F749DA83",
+      "kind" : {
+        "countdownTo" : {
+          "hour" : 10,
+          "minute" : 30
+        }
+      },
+      "name" : "Service Countdown"
+    },
+    {
+      "allowOverrun" : true,
+      "id" : "0342DB38-48B8-4460-AE44-50DE6A386C82",
+      "kind" : {
+        "countdown" : {
+          "seconds" : 2100
+        }
+      },
+      "name" : "Sermon"
+    },
+    {
+      "allowOverrun" : true,
+      "id" : "0F729C3B-78EA-4F74-941D-A4F6606BDDAC",
+      "kind" : {
+        "elapsed" : {
+
+        }
+      },
+      "name" : "Elapsed"
+    }
+  ],
+  "version" : 1
+}
