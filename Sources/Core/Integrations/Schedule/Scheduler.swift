@@ -23,6 +23,7 @@ final class Scheduler {
     @ObservationIgnored private let eventStore = EKEventStore()
     @ObservationIgnored private var firedCalendarEvents: Set<String> = []
     @ObservationIgnored private var lastCheck = Date()
+    @ObservationIgnored private var lastCalendarCheck = Date()
 
     init(store: LibraryStore, engine: LiveEngine) {
         self.store = store
@@ -30,9 +31,11 @@ final class Scheduler {
     }
 
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.check() }
         }
+        RunLoop.main.add(t, forMode: .common)   // keep firing while a menu is open or an alert is showing
+        timer = t
         if store.data.settings.calendarTriggersEnabled { Task { await requestCalendar() } }
     }
 
@@ -49,36 +52,54 @@ final class Scheduler {
         }
     }
 
+    /// A trigger more than this late is skipped, not run. After the Mac sleeps through 9:30, a "walk-in" macro must not
+    /// suddenly fire at 12:00 when it wakes.
+    static let maxLateness: TimeInterval = 90
+
+    enum Due: Equatable { case none, fire(Date), missed(Date) }
+
+    /// What `when` should do given the check window (since, now].
+    static func due(_ when: ScheduleWhen, since: Date, now: Date) -> Due {
+        guard let d = nextDate(when, after: since), d <= now else { return .none }
+        return now.timeIntervalSince(d) <= maxLateness ? .fire(d) : .missed(d)
+    }
+
     private func check() {
         let now = Date()
         let since = lastCheck
         lastCheck = now
-        // Anything whose fire time fell inside (since, now] fires once.
         for (i, s) in store.data.schedules.enumerated() where s.enabled {
-            if let d = Self.nextDate(s.when, after: since.addingTimeInterval(-0.001)), d <= now, d > since.addingTimeInterval(-1.5) {
+            switch Self.due(s.when, since: since, now: now) {
+            case .none: break
+            case .fire:
                 store.data.schedules[i].lastFired = now
                 lastFired = "\(s.name) at \(now.formatted(date: .omitted, time: .shortened))"
-                Task { await engine.perform(s.actions) }
+                engine.run(s.actions)
+            case .missed(let d):
+                lastFired = "Skipped \(s.name): it was due at \(d.formatted(date: .omitted, time: .shortened)) and Lumen wasn't running or awake"
             }
         }
-        if store.data.settings.calendarTriggersEnabled, calendarAccess {
-            checkCalendar(now: now)
+        if store.data.settings.calendarTriggersEnabled, calendarAccess, now.timeIntervalSince(lastCalendarCheck) >= 5 {
+            // EventKit queries run on the main thread: do it every few seconds, over the whole gap since last time.
+            let from = max(lastCalendarCheck, now.addingTimeInterval(-Self.maxLateness))
+            lastCalendarCheck = now
+            checkCalendar(from: from, now: now)
         }
         if Int(now.timeIntervalSince1970) % 30 == 0 { refreshUpcoming() }
     }
 
-    private func checkCalendar(now: Date) {
+    private func checkCalendar(from: Date, now: Date) {
         let cals = calendars()
-        let pred = eventStore.predicateForEvents(withStart: now.addingTimeInterval(-5), end: now.addingTimeInterval(1), calendars: cals)
+        let pred = eventStore.predicateForEvents(withStart: from, end: now.addingTimeInterval(1), calendars: cals)
         for ev in eventStore.events(matching: pred) {
-            guard let start = ev.startDate, start <= now, now.timeIntervalSince(start) < 3 else { continue }
+            guard let start = ev.startDate, start <= now, start >= from else { continue }
             let key = "\(ev.calendarItemIdentifier)|\(start.timeIntervalSince1970)"
             guard !firedCalendarEvents.contains(key) else { continue }
             let actions = Self.actions(fromNotes: ev.notes ?? "", store: store)
             guard !actions.isEmpty else { continue }
             firedCalendarEvents.insert(key)
             lastFired = "Calendar: \(ev.title ?? "event")"
-            Task { await engine.perform(actions) }
+            engine.run(actions)
         }
     }
 

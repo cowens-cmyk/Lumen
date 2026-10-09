@@ -134,7 +134,13 @@ enum LyricParser {
             seen[sec.name.lowercased()] = groups.count - 1
         }
         p.groups = groups
-        p.arrangement = sequence.isEmpty ? [] : arrangement(from: sequence, groups: groups)
+        if sequence.isEmpty {
+            // No order supplied: keep the operator's own arrangement for whichever groups still exist.
+            let valid = Set(groups.map(\.id))
+            p.arrangement = p.arrangement.filter(valid.contains)
+        } else {
+            p.arrangement = arrangement(from: sequence, groups: groups)
+        }
     }
 
     static func normalizeSectionKey(_ s: String) -> String {

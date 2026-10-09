@@ -10,6 +10,10 @@ final class LiveEngine {
     // Live slide
     private(set) var livePresentationID: UUID?
     private(set) var liveIndex: Int?
+    /// Which slide (by id) is live, and a copy of what the room is seeing. If the live song is edited or deleted
+    /// underneath, the outputs keep showing this until the operator picks something else; they never go blank.
+    private(set) var liveSlideID: UUID?
+    private(set) var lastShown: SlideRef?
     private(set) var livePlaylistID: UUID?
     private(set) var slideCleared = true
 
@@ -44,6 +48,12 @@ final class LiveEngine {
     @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored var onSlideTriggered: ((Presentation, Int) -> Void)?
     @ObservationIgnored private var slideshowTask: Task<Void, Never>?
+    /// The presentation the running slideshow belongs to; it stops if anything else goes live or the slide is cleared.
+    @ObservationIgnored private var slideshowOwner: UUID?
+    @ObservationIgnored private var actionTasks: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored private var actionNavigations: [Date] = []
+    /// Called with a human-readable problem (missing media file, runaway actions) so the app can tell the operator.
+    @ObservationIgnored var onProblem: ((String) -> Void)?
     @ObservationIgnored private var propHideTasks: [UUID: Task<Void, Never>] = [:]
     @ObservationIgnored private var clock: Timer?
 
@@ -51,9 +61,11 @@ final class LiveEngine {
         self.store = store
         lookID = store.data.settings.defaultLookID ?? store.data.looks.first?.id
         for t in store.data.timers { timers[t.id] = TimerRuntime() }
-        clock = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
+        RunLoop.main.add(t, forMode: .common)   // countdowns and the stage clock must not stall while a menu is open
+        clock = t
     }
 
     private func tick() {
@@ -79,14 +91,24 @@ final class LiveEngine {
 
     var liveSlides: [SlideRef] { livePresentation?.orderedSlides ?? [] }
 
+    /// Where the live slide is now: its remembered position if that still holds the same slide, else wherever that
+    /// slide moved to after an edit or reorder.
+    var resolvedIndex: Int? {
+        let slides = liveSlides
+        if let i = liveIndex, slides.indices.contains(i), liveSlideID == nil || slides[i].slide.id == liveSlideID { return i }
+        if let id = liveSlideID, let j = slides.firstIndex(where: { $0.slide.id == id }) { return j }
+        return nil
+    }
+
     var currentSlide: SlideRef? {
-        guard !slideCleared, let i = liveIndex else { return nil }
-        return liveSlides[safe: i]
+        guard !slideCleared, liveIndex != nil else { return nil }
+        if let i = resolvedIndex { return liveSlides[i] }
+        return lastShown   // the slide vanished (song edited/deleted): keep what the room is seeing
     }
 
     /// The upcoming slide, crossing into the next playlist item if needed.
     var nextSlide: SlideRef? {
-        guard let i = liveIndex else { return nil }
+        guard let i = resolvedIndex ?? liveIndex else { return nil }
         if let s = liveSlides[safe: i + 1] { return s }
         if let next = nextPlaylistPresentation() { return next.orderedSlides.first }
         return nil
@@ -133,8 +155,11 @@ final class LiveEngine {
             if slides.isEmpty, let m = presentation.groups.first?.slides.first?.media { playMedia(m) }
             return
         }
+        if let owner = slideshowOwner, owner != presentation.id { stopSlideshow() }   // a slideshow never outlives its presentation
         livePresentationID = presentation.id
         liveIndex = index
+        liveSlideID = slides[index].slide.id
+        lastShown = slides[index]
         if let playlistID { livePlaylistID = playlistID }
         slideCleared = false
         let slide = slides[index].slide
@@ -149,7 +174,7 @@ final class LiveEngine {
         }
         syncBackground()
         changed()
-        if !slide.actions.isEmpty { Task { await perform(slide.actions) } }
+        if !slide.actions.isEmpty { run(slide.actions) }
         if presentation.slideshow.enabled, slideshowInterval == nil { startSlideshow(interval: presentation.slideshow.interval) }
         onSlideTriggered?(presentation, index)
     }
@@ -161,7 +186,7 @@ final class LiveEngine {
 
     func next() {
         guard let p = livePresentation else { return }
-        let i = (slideCleared ? -1 : (liveIndex ?? -1)) + 1
+        let i = (slideCleared ? -1 : (resolvedIndex ?? liveIndex ?? -1)) + 1
         if i < p.orderedSlides.count {
             trigger(p, index: i)
         } else if let n = nextPlaylistPresentation() {
@@ -172,8 +197,8 @@ final class LiveEngine {
     }
 
     func previous() {
-        guard let p = livePresentation, let i = liveIndex else { return }
-        if i > 0 { trigger(p, index: i - 1) }
+        guard let p = livePresentation, let i = resolvedIndex ?? liveIndex else { return }
+        if i > 0 { trigger(p, index: min(i - 1, max(0, p.orderedSlides.count - 1))) }
         else if let prev = adjacentPlaylistPresentation(offset: -1) { trigger(prev, index: max(0, prev.orderedSlides.count - 1)) }
     }
 
@@ -213,19 +238,38 @@ final class LiveEngine {
         guard mediaLayer?.id == ref.id, let actions = ref.onEnd, !actions.isEmpty else { return }
         // If the operator already moved on from the slide that started this video, don't skip anything.
         if let owner = mediaOwnerSlideID, slideCleared || currentSlide?.slide.id != owner { return }
-        Task { await perform(actions) }
+        run(actions)
     }
 
     // MARK: - Layers
 
+    /// Stops whatever currently owns the media layer (its player, capture session, NDI receiver or web page) so
+    /// nothing keeps running — or making sound — invisibly underneath the next thing.
+    private func stopMediaLayer(replacingWith newKind: MediaKind? = nil) {
+        guard let m = mediaLayer else { return }
+        switch m.kind {
+        case .video: media.stop()
+        case .capture: capture.stop(deviceID: m.location)
+        case .ndi: ndiIn.stop(source: m.location)
+        case .web: if newKind != .web { browser.close() }
+        case .image, .color, .audio: break
+        }
+    }
+
     func playMedia(_ m: MediaRef, owner: UUID? = nil) {
+        // A missing file must not replace what's on screen with a stale frame: say so and leave things alone.
+        if m.kind == .video || m.kind == .audio || m.kind == .image, let url = m.url, !FileManager.default.fileExists(atPath: url.path) {
+            onProblem?("Can't find “\(m.displayName)”. The file was moved or deleted: \(url.path)")
+            return
+        }
+        if m.kind != .audio { stopMediaLayer(replacingWith: m.kind) }
         mediaOwnerSlideID = owner
         switch m.kind {
         case .video, .audio: media.play(m)
         case .capture: capture.start(deviceID: m.location)
         case .web: browser.load(m.location)
         case .ndi: ndiIn.start(source: m.location)
-        case .image, .color: media.stop()
+        case .image, .color: break
         }
         if m.kind != .audio { mediaLayer = m }
         changed()
@@ -234,22 +278,17 @@ final class LiveEngine {
     func clear(_ target: ClearTarget) {
         switch target {
         case .all:
+            actionTasks.values.forEach { $0.cancel() }   // delayed actions from a macro must not fire after Clear All
+            actionTasks = [:]
             clear(.slide); clear(.media); clear(.props); clear(.messages); clear(.audio)
             stopSlideshow()
         case .slide:
             slideCleared = true
+            stopSlideshow()
             syncBackground()
         case .media:
             mediaOwnerSlideID = nil
-            if let m = mediaLayer {
-                switch m.kind {
-                case .video: media.stop()
-                case .capture: capture.stop(deviceID: m.location)
-                case .ndi: ndiIn.stop(source: m.location)
-                case .web: browser.stopCapture()
-                default: break
-                }
-            }
+            stopMediaLayer()
             mediaLayer = nil
         case .props:
             activeProps = [:]
@@ -331,10 +370,14 @@ final class LiveEngine {
     func startSlideshow(interval: Double) {
         slideshowTask?.cancel()
         slideshowInterval = interval
+        let owner = livePresentationID
+        slideshowOwner = owner
         slideshowTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(max(0.5, interval)))
                 guard !Task.isCancelled, let self else { return }
+                // It only advances its own presentation, and only while that slide is still up.
+                guard !self.slideCleared, self.livePresentationID == owner else { self.stopSlideshow(); return }
                 self.next()
             }
         }
@@ -344,18 +387,42 @@ final class LiveEngine {
         slideshowTask?.cancel()
         slideshowTask = nil
         slideshowInterval = nil
+        slideshowOwner = nil
     }
 
     // MARK: - Actions & macros
 
     func runMacro(_ id: UUID) {
         guard let m = store.macro(id) else { return }
-        Task { await perform(m.actions) }
+        run(m.actions)
+    }
+
+    /// Runs actions in the background, cancellably (Clear All cancels anything still waiting on a delay).
+    func run(_ actions: [SlideAction]) {
+        let id = UUID()
+        actionTasks[id] = Task { [weak self] in
+            await self?.perform(actions)
+            self?.actionTasks[id] = nil
+        }
+    }
+
+    /// Actions that move between slides can chain into themselves (a slide whose action re-triggers its own slide).
+    /// Past a dozen navigations in two seconds, stop obeying them and tell the operator.
+    private func navigationAllowed() -> Bool {
+        let now = Date()
+        actionNavigations.removeAll { now.timeIntervalSince($0) > 2 }
+        guard actionNavigations.count < 12 else {
+            if actionNavigations.count == 12 { onProblem?("A slide action keeps triggering slides in a loop, so it was stopped."); actionNavigations.append(now) }
+            return false
+        }
+        actionNavigations.append(now)
+        return true
     }
 
     func perform(_ actions: [SlideAction], depth: Int = 0) async {
         guard depth < 8 else { return } // guards against macros that call each other forever
         for a in actions {
+            if Task.isCancelled { return }
             switch a {
             case .triggerMacro(let id):
                 if let m = store.macro(id) { await perform(m.actions, depth: depth + 1) }
@@ -370,9 +437,9 @@ final class LiveEngine {
             case .playMedia(let m): playMedia(m)
             case .showMessage(let s): showMessage(s)
             case .stageMessage(let s): setStageMessage(s)
-            case .triggerPresentation(let id, let slide): trigger(presentationID: id, index: slide)
-            case .nextSlide: next()
-            case .previousSlide: previous()
+            case .triggerPresentation(let id, let slide): if navigationAllowed() { trigger(presentationID: id, index: slide) }
+            case .nextSlide: if navigationAllowed() { next() }
+            case .previousSlide: if navigationAllowed() { previous() }
             case .startSlideshow(let i): startSlideshow(interval: i)
             case .stopSlideshow: stopSlideshow()
             case .openWeb(let url):

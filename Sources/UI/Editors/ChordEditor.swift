@@ -62,6 +62,10 @@ struct ChordEditor: View {
     }
 
     private var toolbar: some View {
+        ScrollView(.horizontal, showsIndicators: false) { toolbarContent.padding(10) }
+    }
+
+    private var toolbarContent: some View {
         HStack(spacing: 12) {
             Button {
                 importing = true
@@ -105,7 +109,7 @@ struct ChordEditor: View {
                 report = nil
             }
         }
-        .padding(10)
+        .fixedSize()
     }
 
     private func importChart(_ url: URL) {

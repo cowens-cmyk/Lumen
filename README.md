@@ -8,6 +8,41 @@ Download `Lumen-<version>.dmg` from the GitHub release, open it, and drag Lumen 
 
 To build a DMG yourself, run `Scripts/make_dmg.sh`. It writes `dist/Lumen-<version>.dmg`, and notarizes it automatically if a `lumen-notary` notarytool profile is saved on the Mac (see the comment at the top of the script).
 
+## Sunday-morning checklist
+
+Do this once on the show Mac (Setup), then glance at the pre-service list each week.
+
+**One-time setup**
+1. **Setup → Screens:** assign each screen to its real output (Mac display, DeckLink connector + video mode, NDI). Lumen refuses to put an output on the display its own control window is on, so you can't lock yourself out.
+2. **System Settings → Notifications → Focus:** turn on *Do Not Disturb* for the show Mac so banners never appear on a projector. Lumen keeps the Mac awake on its own (Setup → General → Show safety).
+3. **Setup → Remote & MIDI:** note the phone-remote PIN (Lumen makes one on first launch). **Setup → General:** note the volunteer-mode PIN (also generated); change both if you like.
+4. **Setup → Planning Center:** connect, pick the service type that has *upcoming* plans, then press **Preview Next Service**. It lists every item, what Lumen will do with it, and flags songs with no lyrics, without changing anything.
+5. Install the **Blackmagic Desktop Video** driver (and NDI Tools if you use NDI) and build with the SDKs (see the DeckLink and NDI sections), then check the green status line under each screen.
+
+**Before each service (about two minutes)**
+- Output boxes in the right-hand panel each show a measured fps in green (red means that output is struggling). Hover for render time.
+- Press **Sync** once, glance at the playlist (🔒 = locked from Planning Center changes, ⟳ = synced), and lock it once it's final.
+- Click through the countdown video, the first song's first slide, and the scripture or sermon slide.
+- Confirm the stage display shows the next slide, key and timers.
+- Switch on **Volunteer Mode** for whoever is running slides.
+
+**If something goes wrong**
+- *Lumen crashed or was force-quit:* relaunch; a banner offers **Put It Back on Screen** with the last slide and look.
+- *A song's lyrics look wrong:* edit it (the change shows on screen when you save, and the screen never blanks while you edit); tick *Keep my edits* so Planning Center sync doesn't overwrite it.
+- *An output froze or went dark:* Setup → Screens → **Apply Output Changes** rebuilds the outputs without quitting. DeckLink and NDI feeds are not interrupted by a display being plugged or unplugged.
+- *Your library file was damaged:* Lumen comes back on the newest automatic backup (`Application Support/Lumen/Backups`, one per day plus one per version) and tells you.
+
+## What Lumen does to protect a live service
+
+- **Never blank on a bad edit.** If the live song is edited, shortened or deleted, the outputs keep showing what they showed until you choose something else.
+- **Never change a live service under you.** Planning Center sync, auto-sync and updates don't run while something is on the outputs, and a sync that fails (offline, bad token) changes nothing.
+- **Never lose your arrangement.** Hand-added playlist items stay where you put them across syncs; a playlist can be locked; delete asks first and refuses while the item is live.
+- **Never stop the show by accident.** Closing the control window doesn't quit; quitting or turning outputs off while live asks first (default: cancel); held-down keys don't race through slides; shortcut keys only work in the main window; Volunteer Mode locks Settings, the Show menu and editing.
+- **Keeps the Mac awake** and out of App Nap while it's open.
+- **Phone remote is locked down:** a PIN is required (random, generated on first launch), wrong guesses are rate-limited, malformed or oversized requests are rejected, idle connections are dropped, and the pages never insert show text as HTML.
+- **Dead sources don't freeze on screen:** an unplugged capture card or lost NDI source disappears instead of leaving its last frame; a missing media file is reported instead of leaving a stale frame.
+- **Updates can't strand you:** they check they can replace the app before quitting, verify the signature and version, keep the old copy until the new one has run for 12 seconds, and roll back if it won't stay up.
+
 ## Updates
 
 Lumen updates itself from this GitHub repository, so nobody downloads DMGs after the first install.
@@ -63,13 +98,13 @@ DeckLink output needs Blackmagic's SDK headers at build time and the Desktop Vid
 
 DeckLink **inputs** (for example an Apple TV into the card's HDMI or SDI) show up as ordinary capture devices once Desktop Video is installed. They're listed under **Media → Live inputs**.
 
-If you use SDK 15 or later, the frame-buffer access path is selected by `BLACKMAGIC_DECKLINK_API_VERSION` in `LMDeckLink.mm`. That's the one place to adjust if Blackmagic changes the API again.
+**SDK versions:** `LMDeckLink.mm` has been compiled (with warnings on, zero errors) against the real Desktop Video SDK headers for **12.0, 14.1 and 14.4**, and the whole app has been built and linked against 14.4. SDK 14.3 and later hand out frame memory through `IDeckLinkVideoBuffer`; earlier ones use `GetBytes` on the frame. `LMDeckLink.mm` picks the right one from `BLACKMAGIC_DECKLINK_API_VERSION` (switch at 14.3). If a future SDK changes the API again, that's the one place to adjust. Frames have **not** been pushed to a physical card from this development Mac, so do a test output before the first service.
 
 ## NDI
 
 1. Install the **NDI SDK for Apple** (headers go to `/Library/NDI SDK for Apple/include`, which is already on the header search path). You can instead copy the headers to `Vendor/NDISDK/include`.
 2. Install **NDI Tools** on the show Mac (it provides `libndi.dylib`). Lumen loads the library at run time, so the app still launches on Macs without NDI.
-3. Add an **NDI** output to any screen. It's sent as BGRA with alpha, so vMix, OBS and TriCaster get keyed lower thirds without a separate key feed. NDI **inputs** are under **Media → NDI sources**.
+3. The NDI bridge has been compiled against the real NDI 6 headers. Add an **NDI** output to any screen. It's sent as BGRA with alpha, so vMix, OBS and TriCaster get keyed lower thirds without a separate key feed. NDI **inputs** are under **Media → NDI sources**.
 
 ## Looks: lower thirds vs. stream takeover
 
@@ -124,6 +159,14 @@ MultiTracks.com does not offer a public API for lyrics, so Lumen doesn't scrape 
 ## Permissions the show Mac will ask for
 
 Microphone and Speech Recognition (AI listening), Camera (capture inputs), Screen Recording (sending the web browser to outputs), Automation → Keynote (PowerPoint/Keynote import), Calendars (calendar triggers), and Local Network (remote and NDI).
+
+## How this was tested
+
+Automated (`xcodebuild test`, 114 tests): lyric/Bible/chord parsing and fuzzing (random and hostile input, run for hangs and crashes); the live engine under 3,000 random operations; Planning Center sync replaying a service shaped like a real plan; the remote server over real sockets with malformed requests; library damage and recovery; scheduling across daylight saving; the updater's safety paths with real signed apps (update, crash-on-launch rollback, wrong version/checksum/signer, read-only folder); pixel checks of the compositor; and every screen rendered with realistic data.
+
+Soak (real app, three outputs at 60/30/15 fps, 1080p video loop behind the lyrics): 25 minutes and 10 minutes of randomized operator actions over the phone-remote API (slide changes, clears, looks, props, messages, timers, macros, the countdown video). No crashes or errors; memory held near 200 MB; open files and threads stayed flat; every output held its exact rate with 3 late frames out of ~90,000.
+
+**Not tested here** (needs the real equipment): frames to a physical DeckLink card or over NDI (the bridges compile and link against the real vendor SDK headers and report honestly with no card installed), a second physical display, a real capture card or Apple TV input, MIDI into Lightkey, a Planning Center account (replayed from real-shaped data instead; use *Preview Next Service* the first time), and lyric following on real singing. See the Sunday checklist and do a test output on the real rig before the first service.
 
 ## Known limits in this version
 

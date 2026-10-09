@@ -543,6 +543,8 @@ struct PlaylistItem: Identifiable, Codable, Hashable {
     var kind: PlaylistItemKind
     var pcoItemID: String? = nil
     var color: RGBA? = nil
+    /// Planning Center's notes for this item (e.g. the band's instructions); shown on the stage display.
+    var note: String? = nil
 }
 
 struct Playlist: Identifiable, Codable, Hashable {
@@ -553,10 +555,14 @@ struct Playlist: Identifiable, Codable, Hashable {
     var pcoPlanID: String? = nil
     var pcoServiceTypeID: String? = nil
     var pcoUpdatedAt: String? = nil
+    /// When true, Planning Center sync leaves this playlist exactly as the operator arranged it.
+    var syncLocked: Bool? = nil
 }
 
 enum TemplateMatch: String, Codable, CaseIterable, Identifiable {
     case song, header, media, titleContains
+    /// Matches non-song items by the section header above them (e.g. everything under "MESSAGE").
+    case underHeader
     var id: String { rawValue }
 }
 
@@ -590,7 +596,10 @@ struct ServiceTemplate: Identifiable, Codable, Hashable {
     var leadingPresentations: [UUID] = []
     var trailingPresentations: [UUID] = []
 
-    static let defaultRules: [TemplateRule] = [
+    /// Bumped when the built-in rules change so an unmodified template can be upgraded.
+    var rulesVersion: Int? = nil
+
+    static let legacyDefaultRules: [TemplateRule] = [
         TemplateRule(match: .song, result: .songLyrics),
         TemplateRule(match: .header, result: .header),
         TemplateRule(match: .titleContains, text: "scripture", result: .scripture),
@@ -601,7 +610,39 @@ struct ServiceTemplate: Identifiable, Codable, Hashable {
         TemplateRule(match: .titleContains, text: "welcome", result: .presentationNamed("Welcome")),
         TemplateRule(match: .media, result: .placeholder),
     ]
+
+    /// First match wins, so the specific header rules come before the generic one.
+    static let defaultRules: [TemplateRule] = [
+        TemplateRule(match: .song, result: .songLyrics),
+        TemplateRule(match: .header, text: "countdown", result: .presentationNamed("Countdown")),
+        TemplateRule(match: .header, result: .header),
+        TemplateRule(match: .titleContains, text: "scripture", result: .scripture),
+        TemplateRule(match: .titleContains, text: "reading", result: .scripture),
+        TemplateRule(match: .titleContains, text: "sermon", result: .presentationNamed("Sermon")),
+        TemplateRule(match: .titleContains, text: "message", result: .presentationNamed("Sermon")),
+        TemplateRule(match: .titleContains, text: "announcement", result: .presentationNamed("Announcements")),
+        TemplateRule(match: .titleContains, text: "welcome", result: .presentationNamed("Welcome")),
+        TemplateRule(match: .underHeader, text: "message", result: .presentationNamed("Sermon")),
+        TemplateRule(match: .media, result: .placeholder),
+    ]
+
+    /// The rule for a Planning Center item: its type ("song", "header", "item", "media"), its title,
+    /// and the title of the section header it sits under.
+    func rule(type: String, title: String, header: String) -> TemplateRule? {
+        let t = title.lowercased(), h = header.lowercased()
+        return rules.first { r in
+            let needle = r.text.lowercased()
+            switch r.match {
+            case .song: return type == "song"
+            case .header: return type == "header" && (needle.isEmpty || t.contains(needle))
+            case .media: return type == "media"
+            case .titleContains: return type != "song" && type != "header" && !needle.isEmpty && t.contains(needle)
+            case .underHeader: return type != "song" && type != "header" && !needle.isEmpty && h.contains(needle)
+            }
+        }
+    }
 }
+
 
 // MARK: - Schedules
 

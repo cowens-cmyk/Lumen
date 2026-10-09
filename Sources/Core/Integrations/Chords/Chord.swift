@@ -113,6 +113,7 @@ enum Nashville {
     /// Converts a Nashville number back into a letter chord in a key ("5/7" in G → "D/F#").
     static func letter(for number: String, key: MusicKey) -> String? {
         let parts = number.split(separator: "/", maxSplits: 1).map(String.init)
+        guard !parts.isEmpty else { return nil }
         func parseDegree(_ s: String) -> (pc: Int, rest: String)? {
             var str = Substring(s)
             var accidental = 0
@@ -178,19 +179,28 @@ enum ChordPro {
         var lines: [String] = []
         var chords: [ChordPlacement] = []
         for (i, raw) in s.components(separatedBy: "\n").enumerated() {
-            var out = ""
-            var idx = raw.startIndex
-            while idx < raw.endIndex {
-                if raw[idx] == "[", let close = raw[idx...].firstIndex(of: "]") {
-                    let name = String(raw[raw.index(after: idx)..<close]).trimmingCharacters(in: .whitespaces)
-                    if !name.isEmpty { chords.append(ChordPlacement(line: i, index: out.count, chord: name)) }
-                    idx = raw.index(after: close)
-                } else {
-                    out.append(raw[idx])
-                    idx = raw.index(after: idx)
+            // One pass per line (it used to rescan to the end of the line for every "[", which is quadratic).
+            let chars = Array(raw)
+            var out: [Character] = []
+            out.reserveCapacity(chars.count)
+            var idx = 0
+            var noMoreClose = false     // once there's no "]" ahead, no later "[" can have one either
+            while idx < chars.count {
+                if chars[idx] == "[", !noMoreClose {
+                    var j = idx + 1
+                    while j < chars.count, chars[j] != "]" { j += 1 }
+                    if j < chars.count {
+                        let name = String(chars[(idx + 1)..<j]).trimmingCharacters(in: .whitespaces)
+                        if !name.isEmpty { chords.append(ChordPlacement(line: i, index: out.count, chord: name)) }
+                        idx = j + 1
+                        continue
+                    }
+                    noMoreClose = true
                 }
+                out.append(chars[idx])
+                idx += 1
             }
-            lines.append(out)
+            lines.append(String(out))
         }
         return (lines.joined(separator: "\n"), chords)
     }

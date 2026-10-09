@@ -54,10 +54,19 @@ enum ReferenceParser {
                 return r.location == NSNotFound ? nil : ns.substring(with: r)
             }
             guard let bookText = g(1), let book = BibleBooks.book(named: bookText.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)) ?? BibleBooks.book(named: bookText.replacingOccurrences(of: " ", with: "")),
-                  let ch = g(2).flatMap(Int.init), ch >= 1, ch <= book.chapters else { return nil }
-            var ref = BibleReference(bookNumber: book.number, chapter: ch)
-            ref.verseStart = g(3).flatMap(Int.init)
-            if let a = g(4).flatMap(Int.init) {
+                  var ch = g(2).flatMap(Int.init), ch >= 1 else { return nil }
+            var verseFromNumber = false
+            if book.chapters == 1, g(3) == nil, ch > 1 || g(4) != nil {
+                // Jude, Obadiah, Philemon, 2 John, 3 John have no chapters: "Jude 3" is verse 3 of chapter 1.
+                verseFromNumber = true
+            }
+            guard verseFromNumber || ch <= book.chapters else { return nil }
+            var ref = BibleReference(bookNumber: book.number, chapter: verseFromNumber ? 1 : ch)
+            if verseFromNumber { ref.verseStart = ch; ch = 1 }
+            else { ref.verseStart = g(3).flatMap(Int.init) }
+            if verseFromNumber {
+                if let e = g(4).flatMap(Int.init) { ref.verseEnd = e }      // Jude 3-5
+            } else if let a = g(4).flatMap(Int.init) {
                 if let b = g(5).flatMap(Int.init) {
                     ref.endChapter = a; ref.verseEnd = b      // 3:16-4:2
                 } else {
@@ -110,7 +119,7 @@ enum SpokenNormalizer {
         var acc: Int? = nil
         func flush() { if let a = acc { out.append(String(a)); acc = nil } }
         for w in words {
-            if w == "hundred", let a = acc { acc = a * 100; continue }
+            if w == "hundred", let a = acc { acc = min(a * 100, 100_000); continue }
             if w == "and", acc != nil { continue }
             if let t = tens[w] {
                 if let a = acc, a < 100 { flush() }

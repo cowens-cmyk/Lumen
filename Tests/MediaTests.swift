@@ -159,7 +159,7 @@ final class BackgroundLoopTests: XCTestCase {
         // The output sees the live loop behind the words.
         let outputs = OutputManager(store: store, engine: engine)
         let audience = try XCTUnwrap(store.data.screens.first { $0.role == .audience })
-        guard case .live(let key, _) = outputs.scene(for: audience, size: CGSize(width: 1920, height: 1080)).themeBackground else {
+        guard case .liveOr(let key, _, _) = outputs.scene(for: audience, size: CGSize(width: 1920, height: 1080)).themeBackground else {
             return XCTFail("expected the live background loop")
         }
         XCTAssertEqual(key, LiveFrames.backgroundKey)

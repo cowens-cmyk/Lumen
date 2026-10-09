@@ -54,39 +54,113 @@ final class RemoteServer {
         isRunning = false
     }
 
+    /// Hard limits so a stray or hostile client on the network can't wedge or crash the show.
+    static let maxConnections = 48
+    static let maxConnectionsPerDevice = 8
+    static let maxHeaderBytes = 16 * 1024
+    static let maxBodyBytes = 64 * 1024
+    /// Seconds a connection may stay open. (A variable so tests can shorten it.)
+    nonisolated(unsafe) static var connectionLifetime: TimeInterval = 10
+    @ObservationIgnored private var perDevice: [String: Int] = [:]
+
     private func accept(_ conn: NWConnection) {
+        // One device can't use up every slot: a phone keeps working while something else misbehaves.
+        var device = "unknown"
+        if case .hostPort(let host, _) = conn.endpoint { device = "\(host)" }
+        guard clientCount < Self.maxConnections, perDevice[device, default: 0] < Self.maxConnectionsPerDevice else { conn.cancel(); return }
         clientCount += 1
+        perDevice[device, default: 0] += 1
+        conn.stateUpdateHandler = { [weak self] state in
+            switch state {
+            case .cancelled, .failed:
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.clientCount = max(0, self.clientCount - 1)
+                    self.perDevice[device] = max(0, (self.perDevice[device] ?? 1) - 1)
+                }
+            default: break
+            }
+        }
         conn.start(queue: queue)
+        // A real request arrives in milliseconds; never hold a socket open longer than this (slowloris).
+        queue.asyncAfter(deadline: .now() + Self.connectionLifetime) { conn.cancel() }
         receive(conn, buffer: Data())
     }
 
     nonisolated private func receive(_ conn: NWConnection, buffer: Data) {
+        var device = "unknown"
+        if case .hostPort(let host, _) = conn.endpoint { device = "\(host)" }
         conn.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, done, error in
             guard let self else { return }
             var buf = buffer
             if let data { buf.append(data) }
-            if let req = HTTPRequest(buf) {
-                Task { @MainActor in
-                    let resp = self.handle(req)
-                    conn.send(content: resp.encoded(), completion: .contentProcessed { _ in conn.cancel() })
-                }
-            } else if done || error != nil || buf.count > 1_000_000 {
-                conn.cancel()
-            } else {
-                self.receive(conn, buffer: buf)
+            func reply(_ r: HTTPResponse) {
+                conn.send(content: r.encoded(), completion: .contentProcessed { _ in conn.cancel() })
+            }
+            switch HTTPRequest.parse(buf) {
+            case .request(let req):
+                Task { @MainActor in reply(self.handle(req, device: device)) }
+            case .invalid:
+                reply(.text("Bad request", status: 400))
+            case .incomplete:
+                if done || error != nil { conn.cancel() }
+                else if buf.count > Self.maxHeaderBytes + Self.maxBodyBytes { reply(.text("Too large", status: 413)) }
+                else { self.receive(conn, buffer: buf) }
             }
         }
     }
 
     // MARK: - Routing
 
-    private func authorized(_ req: HTTPRequest) -> Bool {
-        guard let pin = app?.store.data.settings.remotePIN, !pin.isEmpty else { return true }
-        return req.headers["x-lumen-pin"] == pin || req.query["pin"] == pin
+    /// Wrong-PIN attempts in the last minute, across all clients. Past the limit every control request is
+    /// refused (429) until the minute is up, so a 4-digit PIN can't be guessed from the congregation's Wi-Fi.
+    /// Counted per device (by address), so a phone left open with an old PIN can't lock the operator's phone out.
+    @ObservationIgnored private var failures: [String: [Date]] = [:]
+    static let maxFailuresPerMinute = 8
+
+    func isLockedOut(_ device: String = "unknown") -> Bool {
+        let recent = (failures[device] ?? []).filter { Date().timeIntervalSince($0) <= 60 }
+        failures[device] = recent.isEmpty ? nil : recent
+        return recent.count >= Self.maxFailuresPerMinute
     }
 
-    private func handle(_ req: HTTPRequest) -> HTTPResponse {
+    /// True if any device is currently locked out (for tests and the settings page).
+    var isLockedOut: Bool { failures.keys.contains { isLockedOut($0) } }
+
+    /// With no PIN set the remote is open (only for deliberate use); the app generates one on first launch.
+    private func authorized(_ req: HTTPRequest, device: String) -> Bool {
+        guard let pin = app?.store.data.settings.remotePIN, !pin.isEmpty else { return true }
+        let given = req.headers["x-lumen-pin"] ?? req.query["pin"] ?? ""
+        if Self.constantTimeEqual(given, pin) { return true }
+        if !given.isEmpty { noteWrongPIN(from: device) }   // an empty attempt is just the page asking whether a PIN is needed
+        return false
+    }
+
+    func noteWrongPIN(from device: String) { failures[device, default: []].append(Date()) }
+
+    static func constantTimeEqual(_ a: String, _ b: String) -> Bool {
+        let x = Array(a.utf8), y = Array(b.utf8)
+        var diff = x.count ^ y.count
+        for i in 0..<max(x.count, y.count) { diff |= Int(i < x.count ? x[i] : 0) ^ Int(i < y.count ? y[i] : 0) }
+        return diff == 0
+    }
+
+    @ObservationIgnored private var frameCache: [String: (at: Date, png: Data)] = [:]
+
+    /// PNG encoding is main-thread work; reuse the last encode for half a second so polling can't stall the operator UI.
+    private func cachedFrame(role: ScreenRole, buffer: CVPixelBuffer, width: Int) -> Data? {
+        let key = "\(role.rawValue)-\(width)"
+        if let c = frameCache[key], Date().timeIntervalSince(c.at) < 0.5 { return c.png }
+        guard let png = RemoteAPI.png(buffer, width: width) else { return nil }
+        frameCache[key] = (Date(), png)
+        return png
+    }
+
+    private func handle(_ req: HTTPRequest, device: String) -> HTTPResponse {
         guard let app else { return .text("Not ready", status: 503) }
+        if req.path.hasPrefix("/api/"), req.path != "/api/stage", isLockedOut(device) {
+            return HTTPResponse(status: 429, contentType: "application/json", body: Data("{\"error\":\"too many wrong PINs; wait a minute\"}".utf8))
+        }
         switch (req.method, req.path) {
         case ("GET", "/"), ("GET", "/remote"):
             return .html(RemotePages.remote)
@@ -94,23 +168,28 @@ final class RemoteServer {
             return .html(RemotePages.stage)
         case ("GET", "/api/frame"):
             // PNG of what a screen is showing right now: ?screen=audience|stream|stage (&w=960 to shrink).
-            guard authorized(req) else { return .json(["error": "pin"], status: 401) }
+            guard authorized(req, device: device) else { return .json(["error": "pin"], status: 401) }
             let role = ScreenRole(rawValue: req.query["screen"] ?? "audience") ?? .audience
             guard let screen = app.store.data.screens.first(where: { $0.role == role }),
                   let buffer = app.outputs.renderers[screen.id]?.latestFrame,
-                  let png = RemoteAPI.png(buffer, width: Int(req.query["w"] ?? "") ?? 960) else { return .text("No frame", status: 404) }
+                  let png = cachedFrame(role: role, buffer: buffer, width: min(1280, max(160, Int(req.query["w"] ?? "") ?? 960))) else {
+                return .text("No frame", status: 404)
+            }
             return HTTPResponse(status: 200, contentType: "image/png", body: png)
+        case ("GET", "/api/health"):
+            guard authorized(req, device: device) else { return .json(["error": "pin"], status: 401) }
+            return .json(RemoteAPI.health(app))
         case ("GET", "/api/stage"):
             return .json(RemoteAPI.stage(app))
         case ("GET", "/api/state"):
-            guard authorized(req) else { return .json(["error": "pin"], status: 401) }
+            guard authorized(req, device: device) else { return .json(["error": "pin"], status: 401) }
             return .json(RemoteAPI.state(app))
         case ("GET", "/api/presentation"):
-            guard authorized(req) else { return .json(["error": "pin"], status: 401) }
+            guard authorized(req, device: device) else { return .json(["error": "pin"], status: 401) }
             guard let id = req.query["id"].flatMap(UUID.init(uuidString:)) else { return .json(["error": "id"], status: 400) }
             return .json(RemoteAPI.presentation(app, id))
         case ("POST", "/api/cmd"):
-            guard authorized(req) else { return .json(["error": "pin"], status: 401) }
+            guard authorized(req, device: device) else { return .json(["error": "pin"], status: 401) }
             let body = (try? JSONSerialization.jsonObject(with: req.body)) as? [String: Any] ?? [:]
             RemoteAPI.command(app, body)
             return .json(["ok": true])
@@ -145,29 +224,46 @@ struct HTTPRequest {
     var headers: [String: String]
     var body: Data
 
-    /// Returns nil until the full request (headers + Content-Length body) has arrived.
-    init?(_ data: Data) {
-        guard let sep = data.range(of: Data("\r\n\r\n".utf8)) else { return nil }
-        guard let head = String(data: data[..<sep.lowerBound], encoding: .utf8) else { return nil }
+    enum Parsed {
+        case incomplete          // keep reading
+        case invalid             // malformed or over a limit: answer 400 and hang up
+        case request(HTTPRequest)
+    }
+
+    private init(method: String, path: String, query: [String: String], headers: [String: String], body: Data) {
+        self.method = method; self.path = path; self.query = query; self.headers = headers; self.body = body
+    }
+
+    /// Parses a request defensively: nothing a client sends may trap. Negative, non-numeric or oversized
+    /// Content-Length, bad UTF-8 and oversized headers are all `.invalid`.
+    static func parse(_ data: Data) -> Parsed {
+        guard let sep = data.range(of: Data("\r\n\r\n".utf8)) else {
+            return data.count > RemoteServer.maxHeaderBytes ? .invalid : .incomplete
+        }
+        guard sep.lowerBound <= RemoteServer.maxHeaderBytes else { return .invalid }
+        guard let head = String(data: data[..<sep.lowerBound], encoding: .utf8) else { return .invalid }
         let lines = head.components(separatedBy: "\r\n")
         let parts = lines.first?.split(separator: " ") ?? []
-        guard parts.count >= 2 else { return nil }
-        method = String(parts[0])
-        let target = String(parts[1])
+        guard parts.count >= 2, ["GET", "POST", "HEAD", "OPTIONS"].contains(String(parts[0])) else { return .invalid }
         var hs: [String: String] = [:]
         for l in lines.dropFirst() {
             if let c = l.firstIndex(of: ":") {
                 hs[l[..<c].lowercased()] = l[l.index(after: c)...].trimmingCharacters(in: .whitespaces)
             }
         }
-        headers = hs
-        let len = Int(hs["content-length"] ?? "0") ?? 0
+        var len = 0
+        if let raw = hs["content-length"] {
+            guard let n = Int(raw), n >= 0, n <= RemoteServer.maxBodyBytes else { return .invalid }
+            len = n
+        }
         let bodyStart = sep.upperBound
-        guard data.count - bodyStart >= len else { return nil }
-        body = data[bodyStart..<(bodyStart + len)]
-        let comps = URLComponents(string: target)
-        path = comps?.path ?? target
-        query = Dictionary((comps?.queryItems ?? []).map { ($0.name, $0.value ?? "") }, uniquingKeysWith: { a, _ in a })
+        let available = data.count - bodyStart
+        guard available >= len else { return .incomplete }
+        let comps = URLComponents(string: String(parts[1]))
+        return .request(HTTPRequest(
+            method: String(parts[0]), path: comps?.path ?? String(parts[1]),
+            query: Dictionary((comps?.queryItems ?? []).map { ($0.name, $0.value ?? "") }, uniquingKeysWith: { a, _ in a }),
+            headers: hs, body: Data(data[bodyStart..<(bodyStart + len)])))
     }
 }
 
@@ -184,10 +280,10 @@ struct HTTPResponse {
     }
 
     func encoded() -> Data {
-        let reason = [200: "OK", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found", 503: "Service Unavailable"][status] ?? "OK"
+        let reason = [200: "OK", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found", 429: "Too Many Requests", 503: "Service Unavailable"][status] ?? "OK"
         var head = "HTTP/1.1 \(status) \(reason)\r\n"
         head += "Content-Type: \(contentType)\r\nContent-Length: \(body.count)\r\n"
-        head += "Cache-Control: no-store\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
+        head += "Cache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\n\r\n"
         return Data(head.utf8) + body
     }
 }
@@ -237,6 +333,21 @@ enum RemoteAPI {
             "message": e.message ?? "",
             "volunteer": app.volunteerMode,
         ]
+    }
+
+    static func health(_ app: AppModel) -> [String: Any] {
+        var info = mach_task_basic_info(); var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
+        let kr = withUnsafeMutablePointer(to: &info) { $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count) } }
+        let screens: [[String: Any]] = app.store.data.screens.filter(\.enabled).map { s in
+            let h = app.outputs.renderers[s.id]?.health
+            return ["name": s.name, "role": s.role.rawValue, "fps": h?.fps ?? 0, "targetFPS": h?.targetFPS ?? 0, "avgMs": h?.avgMs ?? 0,
+                    "maxMs": h?.maxMs ?? 0, "lateFrames": h?.lateFrames ?? 0, "frames": h?.totalFrames ?? 0, "healthy": h?.isHealthy ?? false,
+                    "status": app.outputs.statusByScreen[s.id] ?? []]
+        }
+        return ["version": UpdateManager.currentVersion, "memoryMB": kr == KERN_SUCCESS ? Double(info.resident_size) / 1_048_576 : -1,
+                "threads": Thread.isMultiThreaded() ? 1 : 0, "keptAwake": AppModel.keepAwakeEnabled, "screens": screens,
+                "live": app.engine.currentSlide != nil, "outputsEnabled": app.outputs.outputsEnabled,
+                "pco": ["lastSync": app.pco.lastSync?.description ?? "never", "error": app.pco.lastError ?? ""]]
     }
 
     static func presentation(_ app: AppModel, _ id: UUID) -> [String: Any] {

@@ -62,6 +62,12 @@ enum ChordMatcher {
     static func transfer(_ chords: [(index: Int, chord: String)], from chartLine: String, to slideLine: String) -> [(Int, String)] {
         if chartLine == slideLine { return chords.map { ($0.index, $0.chord) } }
         let a = wordSpans(chartLine), b = wordSpans(slideLine)
+        // Real lyric lines are a dozen words. A pathological line would make the fuzzy alignment crawl on the main
+        // thread, so past a sane size just place chords proportionally.
+        if a.count > 60 || b.count > 60 {
+            let ratio = Double(slideLine.count) / Double(max(1, chartLine.count))
+            return chords.map { (min(slideLine.count, Int(Double($0.index) * ratio)), $0.chord) }
+        }
         let map = align(a.map(\.norm), b.map(\.norm))
         let slideLen = slideLine.count
         return chords.map { c in

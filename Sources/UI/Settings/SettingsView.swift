@@ -431,7 +431,10 @@ struct PlanningCenterSettings: View {
     @Environment(AppModel.self) private var app
     @State private var secret = Keychain.get("pco-secret")
     @State private var serviceTypes: [(id: String, name: String)] = []
+    @State private var upcoming: [String: Int] = [:]
     @State private var error: String?
+    @State private var preview: [String] = []
+    @State private var previewing = false
 
     var body: some View {
         @Bindable var store = app.store
@@ -443,8 +446,10 @@ struct PlanningCenterSettings: View {
                     Button("Connect & Load Service Types") {
                         Keychain.set("pco-secret", secret)
                         Task {
-                            do { serviceTypes = try await app.pco.client.serviceTypes(); error = nil }
-                            catch { self.error = error.localizedDescription }
+                            do {
+                                serviceTypes = try await app.pco.client.serviceTypes(); error = nil
+                                for t in serviceTypes { upcoming[t.id] = try? await app.pco.client.upcomingPlanCount(serviceType: t.id) }
+                            } catch { self.error = error.localizedDescription }
                         }
                     }
                     Link("Create a Personal Access Token", destination: URL(string: "https://api.planningcenteronline.com/oauth/applications")!)
@@ -457,7 +462,7 @@ struct PlanningCenterSettings: View {
             if !serviceTypes.isEmpty || !store.data.settings.pcoServiceTypeIDs.isEmpty {
                 Section("Service types to sync") {
                     ForEach(serviceTypes, id: \.id) { st in
-                        Toggle(st.name, isOn: Binding(
+                        Toggle("\(st.name)  ·  \(upcoming[st.id].map { "\($0) upcoming" } ?? "…")  ·  id \(st.id)", isOn: Binding(
                             get: { store.data.settings.pcoServiceTypeIDs.contains(st.id) },
                             set: { on in
                                 if on { store.data.settings.pcoServiceTypeIDs.append(st.id) }
@@ -465,6 +470,8 @@ struct PlanningCenterSettings: View {
                             }))
                     }
                     if serviceTypes.isEmpty { Text("\(store.data.settings.pcoServiceTypeIDs.count) selected") }
+                    Text("Churches often have several service types with the same name (old or other campuses). Pick the one with upcoming plans.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
 
@@ -477,6 +484,16 @@ struct PlanningCenterSettings: View {
                     if let d = app.pco.lastSync { Text("Last sync \(d.formatted())").font(.caption).foregroundStyle(.secondary) }
                 }
                 if let e = app.pco.lastError { Text(e).foregroundStyle(.red).font(.caption) }
+                Button(previewing ? "Checking…" : "Preview Next Service (changes nothing)") {
+                    previewing = true
+                    Task { preview = await app.pco.previewNextPlan(); previewing = false }
+                }
+                .disabled(previewing || !app.pco.isConfigured)
+                if !preview.isEmpty {
+                    ScrollView { Text(preview.joined(separator: "\n")).font(.system(size: 11, design: .monospaced)).textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading) }
+                        .frame(maxHeight: 220)
+                }
             }
 
             Section {
@@ -513,9 +530,12 @@ struct TemplateEditor: View {
                     Text("Header").tag(TemplateMatch.header)
                     Text("Media").tag(TemplateMatch.media)
                     Text("Title contains").tag(TemplateMatch.titleContains)
+                    Text("Under header").tag(TemplateMatch.underHeader)
                 }
                 .labelsHidden().frame(width: 130)
-                if rule.match == .titleContains { TextField("text", text: $rule.text).frame(width: 120) }
+                if rule.match == .titleContains || rule.match == .underHeader || rule.match == .header {
+                    TextField(rule.match == .header ? "header (blank = any)" : "text", text: $rule.text).frame(width: 120)
+                }
                 Image(systemName: "arrow.right")
                 Picker("", selection: $rule.result) {
                     Text("Song lyrics").tag(TemplateResult.songLyrics)
@@ -538,6 +558,8 @@ struct TemplateEditor: View {
             }
         }
         Button("Add Rule") { template.rules.append(TemplateRule(match: .titleContains, text: "", result: .placeholder)) }
+        Button("Restore Recommended Rules") { template.rules = ServiceTemplate.defaultRules; template.rulesVersion = 2 }
+            .help("Songs → lyrics; COUNTDOWN header → “Countdown”; anything under MESSAGE → “Sermon”; Announcements; scripture readings.")
         Picker("Always start with", selection: Binding(get: { template.leadingPresentations.first }, set: { template.leadingPresentations = [$0].compactMap { $0 } })) {
             Text("Nothing").tag(UUID?.none)
             ForEach(app.store.data.presentations) { Text($0.name).tag(Optional($0.id)) }
@@ -740,6 +762,16 @@ struct GeneralSettings: View {
                 }
             } header: { Text("Calendar") } footer: {
                 Text("Add lines like “lumen: macro Walk In”, “lumen: slide Announcements 2”, “lumen: look Stream Takeover” or “lumen: timer Service Countdown” to an event's notes. They run when the event starts.")
+            }
+            Section("Show safety") {
+                Toggle("Keep this Mac awake while Lumen is open", isOn: Binding(
+                    get: { AppModel.keepAwakeEnabled },
+                    set: { UserDefaults.standard.set($0, forKey: "keepMacAwake"); app.holdAwake($0) }))
+                Toggle("Allow an output on the display Lumen's control window is on", isOn: Binding(
+                    get: { OutputManager.allowOutputOnOperatorDisplay },
+                    set: { UserDefaults.standard.set($0, forKey: "allowOutputOnOperatorDisplay"); app.outputs.rebuild() }))
+                Text("Normally an output is never placed over your control window, so you can't lock yourself out. Turn this on only for a single-display or mirrored setup.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             UpdatesSettingsSection()
             Section("Library") {

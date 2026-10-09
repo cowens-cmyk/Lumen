@@ -64,7 +64,7 @@ struct Sidebar: View {
             Picker("Playlist", selection: $app.selectedPlaylistID) {
                 Text("Choose a playlist").tag(UUID?.none)
                 ForEach(sortedPlaylists) { pl in
-                    Text(pl.pcoPlanID != nil ? "⟳ \(pl.name)" : pl.name).tag(Optional(pl.id))
+                    Text((pl.syncLocked == true ? "🔒 " : pl.pcoPlanID != nil ? "⟳ " : "") + pl.name).tag(Optional(pl.id))
                 }
             }
             .labelsHidden()
@@ -102,8 +102,20 @@ struct Sidebar: View {
                                 app.store.data.playlists[i].items.append(PlaylistItem(kind: .header("Header")))
                             }
                         }
+                        Button(pl.syncLocked == true ? "Unlock (allow Planning Center updates)" : "Lock (ignore Planning Center updates)") {
+                            if let i = app.store.data.playlists.firstIndex(where: { $0.id == pl.id }) {
+                                app.store.data.playlists[i].syncLocked = pl.syncLocked == true ? nil : true
+                            }
+                        }
                         Button("Rename…") { renamingPlaylist = pl.id }
-                        Button("Delete Playlist", role: .destructive) {
+                        Button("Delete Playlist…", role: .destructive) {
+                            let a = NSAlert()
+                            a.messageText = "Delete the playlist “\(pl.name)”?"
+                            a.informativeText = "The songs themselves stay in the library."
+                            a.alertStyle = .warning
+                            a.addButton(withTitle: "Cancel")
+                            a.addButton(withTitle: "Delete")
+                            guard a.runModal() == .alertSecondButtonReturn else { return }
                             app.store.data.playlists.removeAll { $0.id == pl.id }
                             app.selectedPlaylistID = sortedPlaylists.first?.id
                         }
@@ -159,6 +171,27 @@ struct Sidebar: View {
         }
     }
 
+    private func confirmDelete(_ p: Presentation) {
+        let e = app.engine
+        let a = NSAlert()
+        if e.livePresentationID == p.id, !e.slideCleared {
+            a.messageText = "“\(p.name)” is on screen right now"
+            a.informativeText = "Clear the outputs first, then delete it."
+            a.addButton(withTitle: "OK")
+            a.runModal(); return
+        }
+        a.messageText = "Delete “\(p.name)”?"
+        a.informativeText = "It's removed from the library and from every playlist. This can't be undone (a copy of your library from earlier today is kept in the Backups folder)."
+        a.alertStyle = .warning
+        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: "Delete")
+        guard a.runModal() == .alertSecondButtonReturn else { return }
+        app.store.data.presentations.removeAll { $0.id == p.id }
+        for i in app.store.data.playlists.indices {
+            app.store.data.playlists[i].items.removeAll { if case .presentation(let id) = $0.kind { id == p.id } else { false } }
+        }
+    }
+
     private func matches(_ p: Presentation) -> Bool {
         guard !search.isEmpty else { return true }
         if p.name.localizedCaseInsensitiveContains(search) { return true }
@@ -177,12 +210,7 @@ struct Sidebar: View {
             app.store.upsert(c)
         }
         Divider()
-        Button("Delete", role: .destructive) {
-            app.store.data.presentations.removeAll { $0.id == p.id }
-            for i in app.store.data.playlists.indices {
-                app.store.data.playlists[i].items.removeAll { if case .presentation(let id) = $0.kind { id == p.id } else { false } }
-            }
-        }
+        Button("Delete…", role: .destructive) { confirmDelete(p) }
     }
 }
 
@@ -199,7 +227,10 @@ struct PlaylistRow: View {
         case .presentation(let id):
             let p = app.engine.presentation(id)
             HStack {
-                Label(p?.name ?? "Missing presentation", systemImage: p?.kind.symbol ?? "exclamationmark.triangle")
+                VStack(alignment: .leading, spacing: 1) {
+                    Label(p?.name ?? "Missing presentation", systemImage: p?.kind.symbol ?? "exclamationmark.triangle")
+                    if let n = item.note { Text(n.components(separatedBy: "\n").first ?? "").font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
+                }
                 Spacer()
                 if app.engine.livePresentationID == id, !app.engine.slideCleared {
                     Circle().fill(.red).frame(width: 7, height: 7)

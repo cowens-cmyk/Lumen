@@ -81,6 +81,9 @@ final class UpdateManager {
         LibraryStore.defaultFolder.appendingPathComponent("installed-commit")
     }
 
+    /// Written by the update script when a new version failed to stay running and the old one was restored.
+    static var rolledBackFile: URL { LibraryStore.defaultFolder.appendingPathComponent("rolled-back-version") }
+
     static var autoCheckEnabled: Bool {
         UserDefaults.standard.object(forKey: "autoCheckUpdates") as? Bool ?? true
     }
@@ -177,6 +180,12 @@ final class UpdateManager {
             }
             let rel = try JSONDecoder().decode(Release.self, from: data)
             guard rel.dmg != nil else { state = .failed("The newest release has no download attached."); return }
+            // A version that was installed but wouldn't start on this Mac was rolled back: don't offer it again.
+            if let bad = try? String(contentsOf: Self.rolledBackFile, encoding: .utf8), bad.trimmingCharacters(in: .whitespacesAndNewlines) == rel.version {
+                release = nil
+                state = .upToDate
+                return
+            }
             release = rel
             state = Self.isNewer(rel.version, than: Self.currentVersion) ? .available(rel.version) : .upToDate
         } catch {
@@ -198,16 +207,20 @@ final class UpdateManager {
 
     private func checkSource() async {
         guard let dir = Self.sourcePath else { state = .failed("Source folder unknown."); return }
-        let fetch = await Self.git(["fetch", "--quiet", "origin", "main"], in: dir)
+        let fetch = await Self.git(["fetch", "--quiet", "--tags", "origin", "main"], in: dir)
         guard fetch.status == 0 else { state = .failed("Couldn't reach GitHub: \(fetch.out)"); return }
-        let remote = await Self.git(["rev-parse", "origin/main"], in: dir)
+        // Update to the newest *release tag*, not whatever was last pushed to main.
+        let tags = await Self.git(["tag", "-l", "v*", "--sort=-v:refname"], in: dir)
+        let tag = tags.out.split(separator: "\n").first.map(String.init)
+        let target = tag ?? "origin/main"
+        let remote = await Self.git(["rev-list", "-n", "1", target], in: dir)
         guard remote.status == 0 else { state = .failed(remote.out); return }
         let installed = (try? String(contentsOf: Self.installedCommitFile, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if installed == remote.out { state = .upToDate; return }
-        let range = installed.isEmpty ? ["-5"] : ["\(installed)..origin/main"]
-        let log = await Self.git(["log", "--pretty=format:%s"] + range, in: dir)
-        commits = log.status == 0 ? log.out.split(separator: "\n").map(String.init).filter { !$0.isEmpty } : []
-        state = .available("latest")
+        let log = await Self.git(installed.isEmpty ? ["log", "--pretty=format:%s", "-5", target]
+                                                   : ["log", "--pretty=format:%s", "\(installed)..\(target)"], in: dir)
+        commits = log.status == 0 ? Array(log.out.split(separator: "\n").map(String.init).filter { !$0.isEmpty }.prefix(6)) : []
+        state = .available(tag.map { $0.hasPrefix("v") ? String($0.dropFirst()) : $0 } ?? "latest")
     }
 
     // MARK: Installing
@@ -290,6 +303,10 @@ final class UpdateManager {
             return "Move Lumen into your Applications folder first, then check for updates again."
         }
         let fm = FileManager.default
+        // Find out now — not after Lumen has quit — whether this Mac will let us replace the app.
+        if !fm.isWritableFile(atPath: dest.deletingLastPathComponent().path) || !fm.isDeletableFile(atPath: dest.path) {
+            return "Lumen can't replace itself in \(dest.deletingLastPathComponent().path) (no permission). Install the update by hand from the GitHub release, or move Lumen to ~/Applications."
+        }
         let work = fm.temporaryDirectory.appendingPathComponent("Lumen-update-\(UUID().uuidString)")
         do {
             try fm.createDirectory(at: work, withIntermediateDirectories: true)
@@ -312,10 +329,11 @@ final class UpdateManager {
             try fm.createDirectory(at: mount, withIntermediateDirectories: true)
             let attach = await Self.run("/usr/bin/hdiutil", ["attach", "-nobrowse", "-readonly", "-noverify", "-mountpoint", mount.path, dmg.path])
             guard attach.status == 0 else { return "Couldn't open the download: \(attach.out)" }
-            defer { Task { _ = await Self.run("/usr/bin/hdiutil", ["detach", "-force", mount.path]) } }
 
             let staged = work.appendingPathComponent("Lumen.app")
             let cp = await Self.run("/usr/bin/ditto", [mount.appendingPathComponent("Lumen.app").path, staged.path])
+            // The app is copied out; unmount the disk image now (not "later") so it isn't left mounted after we quit.
+            _ = await Self.run("/usr/bin/hdiutil", ["detach", "-force", mount.path])
             guard cp.status == 0 else { return "Couldn't unpack the update: \(cp.out)" }
             guard Bundle(url: staged)?.bundleIdentifier == Bundle.main.bundleIdentifier else { return "The download isn't Lumen, so it was not installed." }
             // Must be intact and signed by Hope Church's Developer ID — a stolen token can't push a rogue build.
@@ -323,26 +341,61 @@ final class UpdateManager {
             let verify = await Self.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", "-R" + requirement, staged.path])
             guard verify.status == 0 else { return "The update isn't signed by Hope Church, so it was not installed. \(verify.out)" }
 
+            // The app inside the DMG must be the version the release says it is (not a stale or swapped file).
+            let stagedVersion = Bundle(url: staged)?.infoDictionary?["CFBundleShortVersionString"] as? String
+            guard stagedVersion == release.version else {
+                return "The download contains version \(stagedVersion ?? "unknown") but the release says \(release.version), so it was not installed."
+            }
+
             let script = work.appendingPathComponent("swap.sh")
             let text = """
             #!/bin/zsh
-            while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.3; done
-            mv "$1" "$1.old" || exit 1
-            if ditto "$2" "$1"; then
-              rm -rf "$1.old"
-              xattr -dr com.apple.quarantine "$1" 2>/dev/null
-            else
-              rm -rf "$1"; mv "$1.old" "$1"   # put the old version back if the copy failed
+            exec >> "$4" 2>&1                     # keep a log (Application Support/Lumen/update.log) for diagnosing a failed update
+            echo "--- $(date) updating $1"
+            pid=\(ProcessInfo.processInfo.processIdentifier)
+            # Wait for Lumen to quit. A process that has quit but not been reaped (state Z) counts as gone, and a hung one
+            # is asked to stop after 20 s, then forced after 30 s, so the update can't wait forever.
+            waited=0
+            while kill -0 $pid 2>/dev/null && [ "$(ps -o stat= -p $pid 2>/dev/null | cut -c1)" != "Z" ]; do
+              sleep 0.3; waited=$((waited+1))
+              [ $waited -eq 66 ] && { echo "Lumen is slow to quit; asking again"; kill $pid 2>/dev/null; }
+              [ $waited -eq 100 ] && { echo "Lumen is stuck; forcing it to quit"; kill -9 $pid 2>/dev/null; }
+              [ $waited -gt 130 ] && break
+            done
+            echo "old app exited" 
+            mv "$1" "$1.old" || { echo "could not move the old app aside"; open "$1"; exit 1; }
+            if ! ditto "$2" "$1"; then          # copy failed: put the old version straight back
+              rm -rf "$1"; mv "$1.old" "$1"; open "$1"; exit 1
             fi
+            xattr -dr com.apple.quarantine "$1" 2>/dev/null
             open "$1"
+            # Keep the previous version until the new one has stayed running for 12 seconds in a row.
+            up=0; ok=0
+            for i in {1..40}; do
+              sleep 1
+              if pgrep -f "$1/Contents/MacOS/" >/dev/null; then up=$((up+1)); else up=0; fi
+              if [ $up -ge 12 ]; then ok=1; break; fi
+            done
+            if [ $ok = 1 ]; then
+              echo "new version is up; removing the old copy"
+              rm -rf "$1.old"
+            else
+              echo "new version did not stay up; rolling back"
+              echo "$5" > "$(dirname "$4")/rolled-back-version"                                  # the new version won't stay up: roll back
+              pkill -f "$1/Contents/MacOS/" 2>/dev/null; sleep 1
+              rm -rf "$1"; mv "$1.old" "$1"; open "$1"
+            fi
             rm -rf "$3"
             """
             try text.write(to: script, atomically: true, encoding: .utf8)
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/bin/zsh")
-            p.arguments = [script.path, dest.path, staged.path, work.path]
+            let logPath = LibraryStore.defaultFolder.appendingPathComponent("update.log").path
+            try? FileManager.default.createDirectory(at: LibraryStore.defaultFolder, withIntermediateDirectories: true)
+            p.arguments = [script.path, dest.path, staged.path, work.path, logPath, release.version]
             try p.run()
             try? await Task.sleep(for: .milliseconds(400))
+            app?.quitApproved = true      // the operator already confirmed the update (and was warned if live)
             NSApp.terminate(nil)
             return nil
         } catch {

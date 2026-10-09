@@ -9,6 +9,8 @@ enum SceneBackground {
     case image(CIImage, ScaleMode)
     /// A live source in `LiveFrames` (video, capture, web, NDI).
     case live(String, ScaleMode)
+    /// Like `live`, but shows this colour (not black) while the source has no frame yet or has stopped.
+    case liveOr(String, ScaleMode, RGBA)
 }
 
 /// Everything a screen needs to draw a frame. Built on the main actor, read by the render queue.
@@ -48,6 +50,10 @@ final class ScreenRenderer: @unchecked Sendable {
     private var sinks: [FrameSink] = []
     private var poolAuxAttributes: CFDictionary?
     private var previewPending = false
+    private var stamps: [CFTimeInterval] = []     // when the last ~120 frames were delivered
+    private var durations: [Double] = []          // how long each took to render (ms)
+    private var lateFrames = 0
+    private var totalFrames = 0
     private var latest: CVPixelBuffer?
     private let previews = NSHashTable<FrameDisplayView>.weakObjects()
 
@@ -96,6 +102,12 @@ final class ScreenRenderer: @unchecked Sendable {
 
     func addSink(_ sink: FrameSink) {
         lock.lock(); sinks.append(sink); lock.unlock()
+    }
+
+    var sinkCount: Int { lock.lock(); defer { lock.unlock() }; return sinks.count }
+
+    func removeSink(_ sink: FrameSink) {
+        lock.lock(); sinks.removeAll { $0 === sink }; lock.unlock()
     }
 
     func addPreview(_ view: FrameDisplayView) {
@@ -164,6 +176,9 @@ final class ScreenRenderer: @unchecked Sendable {
         case .color(let c): return CIImage(color: CIColor(cgColor: c.cgColor)).cropped(to: rect)
         case .image(let img, let mode): return withBars(place(img, mode), mode: mode, opaque: opaque)
         case .live(let key, let mode): return LiveFrames.shared.get(key).map { withBars(place($0, mode), mode: mode, opaque: opaque) }
+        case .liveOr(let key, let mode, let fallback):
+            if let f = LiveFrames.shared.get(key) { return withBars(place(f, mode), mode: mode, opaque: opaque) }
+            return CIImage(color: CIColor(cgColor: fallback.cgColor)).cropped(to: rect)
         }
     }
 
@@ -172,7 +187,22 @@ final class ScreenRenderer: @unchecked Sendable {
         img.extent.size == size ? img : place(img, .stretch)
     }
 
+    struct Health {
+        var targetFPS: Double, fps: Double, avgMs: Double, maxMs: Double, lateFrames: Int, totalFrames: Int
+        /// Healthy = delivering at least 90% of the target rate.
+        var isHealthy: Bool { totalFrames < 30 || fps >= targetFPS * 0.9 }
+    }
+
+    var health: Health {
+        lock.lock(); defer { lock.unlock() }
+        let span = (stamps.last ?? 0) - (stamps.first ?? 0)
+        let fps = stamps.count >= 2 && span > 0 ? Double(stamps.count - 1) / span : 0
+        let avg = durations.isEmpty ? 0 : durations.reduce(0, +) / Double(durations.count)
+        return Health(targetFPS: self.fps, fps: fps, avgMs: avg, maxMs: durations.max() ?? 0, lateFrames: lateFrames, totalFrames: totalFrames)
+    }
+
     private func renderFrame() {
+        let started = CACurrentMediaTime()
         lock.lock()
         let s = scene
         let prev = previousSlide
@@ -207,7 +237,15 @@ final class ScreenRenderer: @unchecked Sendable {
         guard let buffer = pb else { return }
         ciContext.render(out, to: buffer, bounds: rect, colorSpace: CGColorSpace(name: CGColorSpace.sRGB))
 
-        lock.lock(); latest = buffer; lock.unlock()
+        let done = CACurrentMediaTime()
+        lock.lock()
+        latest = buffer
+        stamps.append(done); if stamps.count > 120 { stamps.removeFirst() }
+        let ms = (done - started) * 1000
+        durations.append(ms); if durations.count > 120 { durations.removeFirst() }
+        if ms > 1000 / fps { lateFrames += 1 }
+        totalFrames += 1
+        lock.unlock()
         for sink in currentSinks { sink.send(buffer) }
         if !views.isEmpty {
             lock.lock()

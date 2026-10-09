@@ -4,7 +4,13 @@ import Observation
 /// Keeps Lumen's playlists in step with Planning Center service plans.
 /// Each plan becomes a playlist; items are mapped through the service template's rules,
 /// so songs get CCLI-sourced lyrics from their arrangements, scripture items get Bible slides,
-/// and "Sermon"/"Announcements" items pick up the matching library presentations.
+/// and "Sermon"/"Announcements"/"Countdown" items pick up the matching library presentations.
+///
+/// Safety rules for a live service:
+/// - Nothing is synced while something is on screen (a song updating under a live slide could blank it).
+/// - Items the operator added by hand are kept, in place, across syncs.
+/// - A playlist can be locked and is then never touched.
+/// - A failed sync (offline, bad token) changes nothing.
 @MainActor
 @Observable
 final class PlanningCenterSync {
@@ -16,6 +22,12 @@ final class PlanningCenterSync {
     private(set) var lastError: String?
     private(set) var log: [String] = []
 
+    /// Tests replace the network with canned Planning Center responses.
+    @ObservationIgnored var plansOverride: ((String) async throws -> [PlanningCenterClient.Resource])?
+    @ObservationIgnored var itemsOverride: ((String, String) async throws -> PlanningCenterClient.Page)?
+
+    /// Set by the app: true while a slide or media is on the outputs.
+    @ObservationIgnored var isLive: () -> Bool = { false }
     @ObservationIgnored private var timer: Timer?
 
     init(store: LibraryStore, scripture: ScriptureService) {
@@ -33,12 +45,14 @@ final class PlanningCenterSync {
         timer?.invalidate()
         let minutes = store.data.settings.pcoAutoSyncMinutes
         guard minutes > 0 else { return }
-        timer = Timer.scheduledTimer(withTimeInterval: Double(minutes) * 60, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: Double(minutes) * 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, self.isConfigured else { return }
                 Task { await self.sync() }
             }
         }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
     }
 
     private func note(_ s: String) {
@@ -46,25 +60,53 @@ final class PlanningCenterSync {
         if log.count > 200 { log.removeFirst(log.count - 200) }
     }
 
-    func sync() async {
-        guard !isSyncing else { return }
-        guard isConfigured else { lastError = PlanningCenterClient.PCOError.notConfigured.localizedDescription; return }
+    /// Returns false (and does nothing) if a sync is already running or something is live.
+    @discardableResult
+    func sync() async -> Bool {
+        guard !isSyncing else { return false }
+        guard isConfigured else { lastError = PlanningCenterClient.PCOError.notConfigured.localizedDescription; return false }
+        guard !isLive() else {
+            note("Skipped: something is on screen. Clear the outputs and sync again.")
+            lastError = "Not syncing while something is on screen."
+            return false
+        }
         isSyncing = true
         lastError = nil
         defer { isSyncing = false }
         do {
             let s = store.data.settings
             for st in s.pcoServiceTypeIDs {
-                let plans = try await client.plans(serviceType: st, from: Date(), days: s.pcoSyncDaysAhead)
-                for plan in plans {
-                    try await syncPlan(plan, serviceType: st)
-                }
+                let plans = try await fetchPlans(st, days: s.pcoSyncDaysAhead)
+                for plan in plans { _ = try await syncPlan(plan, serviceType: st, dryRun: false) }
             }
             lastSync = Date()
+            return true
         } catch {
             lastError = error.localizedDescription
             note("Error: \(error.localizedDescription)")
+            return false
         }
+    }
+
+    /// "What would Lumen do with the next service?" — fetches the next upcoming plan and reports, item by item,
+    /// what it found (lyrics? arrangement order? chart?) and which template rule applies. Changes nothing.
+    func previewNextPlan() async -> [String] {
+        guard isConfigured else { return [PlanningCenterClient.PCOError.notConfigured.localizedDescription] }
+        var out: [String] = []
+        do {
+            for st in store.data.settings.pcoServiceTypeIDs {
+                let plans = try await fetchPlans(st, days: 60)
+                guard let plan = plans.first else { out.append("Service type \(st): no upcoming plans."); continue }
+                out.append("Plan: \(plan.string("dates") ?? plan.id)  (service type \(st))")
+                out += try await syncPlan(plan, serviceType: st, dryRun: true)
+            }
+        } catch { out.append("Error: \(error.localizedDescription)") }
+        return out
+    }
+
+    private func fetchPlans(_ serviceType: String, days: Int) async throws -> [PlanningCenterClient.Resource] {
+        if let plansOverride { return try await plansOverride(serviceType) }
+        return try await client.plans(serviceType: serviceType, from: Date(), days: days)
     }
 
     private var template: ServiceTemplate {
@@ -72,11 +114,45 @@ final class PlanningCenterSync {
             ?? ServiceTemplate(name: "Default")
     }
 
-    private func syncPlan(_ plan: PlanningCenterClient.Resource, serviceType: String) async throws {
+    /// Items the template adds around every service get ids like this, so they're replaced (not duplicated) each sync.
+    private static func templateID(_ side: String, _ n: Int) -> String { "template-\(side)-\(n)" }
+
+    private func syncPlan(_ plan: PlanningCenterClient.Resource, serviceType: String, dryRun: Bool) async throws -> [String] {
+        var report: [String] = []
         let iso = ISO8601DateFormatter()
         let date = plan.string("sort_date").flatMap { iso.date(from: $0) }
+        let page: PlanningCenterClient.Page
+        if let itemsOverride { page = try await itemsOverride(serviceType, plan.id) }
+        else { page = try await client.items(serviceType: serviceType, plan: plan.id) }
+        let included = Dictionary(page.included.map { ("\($0.type):\($0.id)", $0) }, uniquingKeysWith: { a, _ in a })
+        let items = page.data.sorted { ($0.attributes["sequence"] as? Int ?? 0) < ($1.attributes["sequence"] as? Int ?? 0) }
+
+        // ---- Everything that needs the network happens before anything is changed. ----
+        let tpl = template
+        var scriptureByRef: [String: Presentation] = [:]
+        if !dryRun {
+            var header = ""
+            for item in items {
+                let type = item.string("item_type") ?? "item"
+                let t = item.string("title") ?? ""
+                if type == "header" { header = t }
+                guard tpl.rule(type: type, title: t, header: header)?.result == .scripture else { continue }
+                for ref in ReferenceParser.parseAll(t + " " + (item.string("description") ?? "")) where scriptureByRef[ref.display] == nil {
+                    do { scriptureByRef[ref.display] = try await scripturePresentation(ref) }
+                    catch { note("Scripture \(ref.display): \(error.localizedDescription)") }
+                }
+            }
+            // The operator may have gone live while we were waiting on Planning Center. Never change a live service.
+            if isLive() { note("Skipped: something went on screen during the sync. Nothing was changed."); return [] }
+        }
+
+        // ---- From here on there are no awaits: read the playlist fresh and apply in one step. ----
         var playlist = store.data.playlists.first { $0.pcoPlanID == plan.id }
             ?? Playlist(name: "", pcoPlanID: plan.id, pcoServiceTypeID: serviceType)
+        if playlist.syncLocked == true && !dryRun {
+            note("Locked, not updated: \(playlist.name)")
+            return []
+        }
         let df = DateFormatter()
         df.dateFormat = "EEE MMM d"
         let title = [plan.string("title"), plan.string("series_title")].compactMap { $0 }.first { !$0.isEmpty } ?? ""
@@ -84,101 +160,144 @@ final class PlanningCenterSync {
         if playlist.name.isEmpty { playlist.name = plan.string("dates") ?? "Service" }
         playlist.date = date
 
-        let page = try await client.items(serviceType: serviceType, plan: plan.id)
-        let included = Dictionary(page.included.map { ("\($0.type):\($0.id)", $0) }, uniquingKeysWith: { a, _ in a })
-        let items = page.data.sorted { ($0.attributes["sequence"] as? Int ?? 0) < ($1.attributes["sequence"] as? Int ?? 0) }
-
         var newItems: [PlaylistItem] = []
-        let tpl = template
-        let existingByPCO = Dictionary(playlist.items.compactMap { i in i.pcoItemID.map { ($0, i) } }, uniquingKeysWith: { a, _ in a })
-        func keepID(_ item: PlaylistItem) -> PlaylistItem {
-            var i = item
-            if let pid = i.pcoItemID, let old = existingByPCO[pid] { i.id = old.id }
+        let oldByPCO = Dictionary(playlist.items.compactMap { i in i.pcoItemID.map { ($0, i) } }, uniquingKeysWith: { a, _ in a })
+        /// Re-use the old row's identity so selection and ordering in the UI don't jump.
+        func make(_ kind: PlaylistItemKind, pcoID: String, note: String? = nil) -> PlaylistItem {
+            var i = PlaylistItem(kind: kind, pcoItemID: pcoID, note: note)
+            if let old = oldByPCO[pcoID] { i.id = old.id; i.color = old.color }
             return i
         }
 
-        for id in tpl.leadingPresentations { newItems.append(PlaylistItem(kind: .presentation(id))) }
+        for (n, id) in tpl.leadingPresentations.enumerated() {
+            newItems.append(make(.presentation(id), pcoID: Self.templateID("lead", n)))
+        }
 
+        var currentHeader = ""
         for item in items {
             let type = item.string("item_type") ?? "item"
             let itemTitle = item.string("title") ?? ""
-            let rule = tpl.rules.first { r in
-                switch r.match {
-                case .song: type == "song"
-                case .header: type == "header"
-                case .media: type == "media"
-                case .titleContains: type != "song" && type != "header" && !r.text.isEmpty
-                    && itemTitle.lowercased().contains(r.text.lowercased())
-                }
-            }
+            if type == "header" { currentHeader = itemTitle }
+            let noteText = item.string("description").flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+            let rule = tpl.rule(type: type, title: itemTitle, header: currentHeader)
             let result = rule?.result ?? (type == "song" ? .songLyrics : .placeholder)
+            var line = "\(type == "song" ? "♪" : type == "header" ? "§" : "•") \(itemTitle.isEmpty ? "(untitled)" : itemTitle)"
+
             switch result {
             case .skip:
                 continue
             case .header:
-                newItems.append(keepID(PlaylistItem(kind: .header(itemTitle), pcoItemID: item.id)))
+                newItems.append(make(.header(itemTitle), pcoID: item.id))
+                line += "  → section header"
             case .placeholder:
-                newItems.append(keepID(PlaylistItem(kind: .placeholder(itemTitle), pcoItemID: item.id)))
+                newItems.append(make(.placeholder(itemTitle), pcoID: item.id, note: noteText))
+                line += "  → placeholder (no rule matched; drag a presentation onto it or add a rule)"
             case .presentation(let pid):
-                newItems.append(keepID(PlaylistItem(kind: .presentation(pid), pcoItemID: item.id)))
+                if type == "header" { newItems.append(make(.header(itemTitle), pcoID: item.id)) }
+                newItems.append(make(.presentation(pid), pcoID: type == "header" ? item.id + "#slides" : item.id, note: noteText))
+                line += "  → library presentation"
             case .presentationNamed(let name):
-                let p = presentationNamed(name, itemTitle: itemTitle)
-                newItems.append(keepID(PlaylistItem(kind: .presentation(p.id), pcoItemID: item.id)))
+                let exists = store.data.presentations.contains { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+                let p = presentationNamed(name, dryRun: dryRun)
+                // A header that maps to a presentation (COUNTDOWN) keeps its header row too.
+                if type == "header" { newItems.append(make(.header(itemTitle), pcoID: item.id)) }
+                newItems.append(make(.presentation(p.id), pcoID: type == "header" ? item.id + "#slides" : item.id, note: noteText))
+                line += "  → “\(name)”" + (exists ? "" : " (will be created empty; add its video or slides)")
             case .songLyrics:
-                if let p = songPresentation(item: item, included: included) {
-                    newItems.append(keepID(PlaylistItem(kind: .presentation(p.id), pcoItemID: item.id)))
+                let info = songInfo(item: item, included: included)
+                line += "  key \(item.string("key_name") ?? "?")  \(info)"
+                if let p = songPresentation(item: item, included: included, dryRun: dryRun) {
+                    newItems.append(make(.presentation(p.id), pcoID: item.id, note: noteText))
                 } else {
-                    newItems.append(keepID(PlaylistItem(kind: .placeholder("\(itemTitle) (no lyrics in Planning Center)"), pcoItemID: item.id)))
+                    newItems.append(make(.placeholder("\(itemTitle) — no lyrics in Planning Center"), pcoID: item.id, note: noteText))
                 }
             case .scripture:
-                let text = itemTitle + " " + (item.string("description") ?? "")
-                let refs = ReferenceParser.parseAll(text)
-                if refs.isEmpty {
-                    newItems.append(keepID(PlaylistItem(kind: .placeholder(itemTitle), pcoItemID: item.id)))
-                }
-                for ref in refs {
-                    do {
-                        let p = try await scripturePresentation(ref)
-                        newItems.append(keepID(PlaylistItem(kind: .presentation(p.id), pcoItemID: item.id)))
-                    } catch {
-                        note("Scripture \(ref.display): \(error.localizedDescription)")
-                        newItems.append(keepID(PlaylistItem(kind: .placeholder(ref.display), pcoItemID: item.id)))
-                    }
+                let refs = ReferenceParser.parseAll(itemTitle + " " + (item.string("description") ?? ""))
+                line += refs.isEmpty ? "  → no Bible reference found" : "  → " + refs.map(\.display).joined(separator: ", ")
+                if refs.isEmpty { newItems.append(make(.placeholder(itemTitle), pcoID: item.id, note: noteText)) }
+                for (k, ref) in refs.enumerated() {
+                    let pid = k == 0 ? item.id : "\(item.id)#\(k)"
+                    if let p = scriptureByRef[ref.display] { newItems.append(make(.presentation(p.id), pcoID: pid)) }
+                    else { newItems.append(make(.placeholder(ref.display), pcoID: pid)) }
                 }
             }
+            report.append(line)
         }
 
-        for id in tpl.trailingPresentations { newItems.append(PlaylistItem(kind: .presentation(id))) }
+        for (n, id) in tpl.trailingPresentations.enumerated() {
+            newItems.append(make(.presentation(id), pcoID: Self.templateID("trail", n)))
+        }
 
+        if dryRun { return report }
+
+        newItems = Self.keepingManualItems(from: playlist.items, in: newItems)
         if newItems != playlist.items || playlist.pcoUpdatedAt != plan.string("updated_at") {
             playlist.items = newItems
             playlist.pcoUpdatedAt = plan.string("updated_at")
             store.upsert(playlist)
             note("Updated \(playlist.name) (\(newItems.count) items)")
         }
+        return report
     }
 
-    private func presentationNamed(_ name: String, itemTitle: String) -> Presentation {
+    /// Rows the operator added by hand (no Planning Center id) stay where they were: right after the
+    /// Planning Center row that preceded them. If that row is gone they go to the end.
+    static func keepingManualItems(from old: [PlaylistItem], in new: [PlaylistItem]) -> [PlaylistItem] {
+        var result = new
+        var anchor: String? = nil
+        for item in old {
+            if let pid = item.pcoItemID { anchor = pid; continue }
+            var at = 0
+            if let anchor {
+                if let i = result.lastIndex(where: { $0.pcoItemID == anchor }) { at = i + 1 } else { at = result.count }
+                // keep consecutive manual rows in order
+                while at < result.count, result[at].pcoItemID == nil, old.contains(where: { $0.id == result[at].id }) { at += 1 }
+            }
+            result.insert(item, at: min(at, result.count))
+        }
+        return result
+    }
+
+    private func presentationNamed(_ name: String, dryRun: Bool) -> Presentation {
         if let p = store.data.presentations.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) { return p }
-        let kind: PresentationKind = name.lowercased().contains("sermon") ? .sermon
-            : name.lowercased().contains("announce") ? .announcement : .generic
+        let lower = name.lowercased()
+        let kind: PresentationKind = lower.contains("sermon") ? .sermon : lower.contains("announce") ? .announcement
+            : lower.contains("countdown") ? .media : .generic
         let p = Presentation(name: name, kind: kind)
-        store.upsert(p)
+        if !dryRun { store.upsert(p) }
         return p
     }
 
     private func scripturePresentation(_ ref: BibleReference) async throws -> Presentation {
         var p = try await scripture.presentation(for: ref)
-        if let existing = store.data.presentations.first(where: { $0.kind == .scripture && $0.name == p.name }) {
-            return existing
-        }
+        if let existing = store.data.presentations.first(where: { $0.kind == .scripture && $0.name == p.name }) { return existing }
         p.notes = "Created from Planning Center"
         store.upsert(p)
         return p
     }
 
+    /// Planning Center sends JSON null for blank fields; Foundation turns that into NSNull, which must not become "<null>".
+    static func text(_ any: Any?) -> String {
+        switch any {
+        case let s as String: return s
+        case let n as Int: return String(n)
+        case let n as NSNumber where !(any is NSNull): return n.stringValue
+        default: return ""
+        }
+    }
+
+    private func songInfo(item: PlanningCenterClient.Resource, included: [String: PlanningCenterClient.Resource]) -> String {
+        let arr = item.relID("arrangement").flatMap { included["Arrangement:\($0)"] }
+        let lyrics = arr?.string("lyrics") ?? ""
+        let seq = (item.attributes["custom_arrangement_sequence"] as? [String]).flatMap { $0.isEmpty ? nil : $0 }
+            ?? (arr?.attributes["sequence"] as? [String]) ?? []
+        return "lyrics: " + (lyrics.isEmpty ? "NONE (import lyrics in Planning Center or Lumen)" : "\(lyrics.count) chars")
+            + " · order: " + (seq.isEmpty ? "default" : seq.joined(separator: " "))
+            + " · chart: " + ((arr?.string("chord_chart")?.isEmpty == false) ? "yes (key \(arr?.string("chord_chart_key") ?? "?"))" : "none")
+    }
+
     private func songPresentation(item: PlanningCenterClient.Resource,
-                                  included: [String: PlanningCenterClient.Resource]) -> Presentation? {
+                                  included: [String: PlanningCenterClient.Resource], dryRun: Bool) -> Presentation? {
         let songID = item.relID("song")
         let arrID = item.relID("arrangement")
         let song = songID.flatMap { included["Song:\($0)"] }
@@ -206,7 +325,7 @@ final class PlanningCenterSync {
         }
 
         if var existing = store.data.presentations.first(where: { $0.pcoArrangementID == arrID && arrID != nil }) {
-            if !existing.lockedFromSync, existing.pcoUpdatedAt != updated {
+            if !existing.lockedFromSync, existing.pcoUpdatedAt != updated, !dryRun {
                 LyricParser.apply(text: lyrics, to: &existing, maxLines: maxLines, sequence: sequence)
                 applyChords(&existing)
                 existing.pcoUpdatedAt = updated
@@ -218,14 +337,13 @@ final class PlanningCenterSync {
         var p = LyricParser.presentation(name: name, kind: .song, text: lyrics, maxLines: maxLines, sequence: sequence)
         p.author = song?.string("author") ?? ""
         p.copyright = song?.string("copyright") ?? ""
-        p.ccli = (song?.attributes["ccli_number"]).map { "\($0)" } ?? ""
+        p.ccli = Self.text(song?.attributes["ccli_number"])
         p.pcoSongID = songID
         p.pcoArrangementID = arrID
         p.pcoUpdatedAt = updated
         applyChords(&p)
         if let arrName = arr?.string("name"), arrName.lowercased() != "default arrangement" { p.name += " (\(arrName))" }
-        store.upsert(p)
-        note("Added song: \(p.name)")
+        if !dryRun { store.upsert(p); note("Added song: \(p.name)") }
         return p
     }
 }

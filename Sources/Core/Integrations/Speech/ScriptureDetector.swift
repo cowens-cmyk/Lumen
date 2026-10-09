@@ -38,13 +38,17 @@ struct ScriptureDetector {
                 return r.location == NSNotFound ? nil : ns.substring(with: r)
             }
             guard let bookName = g(1), let book = BibleBooks.book(named: bookName.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)),
-                  let ch = g(2).flatMap(Int.init), ch >= 1, ch <= book.chapters else { continue }
-            let hasVerse = g(3) != nil
+                  let num = g(2).flatMap(Int.init), num >= 1 else { continue }
+            // Single-chapter books (Jude, Philemon…): "Jude 3" is verse 3.
+            let verseFromNumber = book.chapters == 1 && num > 1 && g(3) == nil
+            guard verseFromNumber || num <= book.chapters else { continue }
+            let ch = verseFromNumber ? 1 : num
+            let hasVerse = g(3) != nil || verseFromNumber
             let hasCue = Self.cues.contains { lowerRaw.contains($0) }
             // "Mark 5" or "Acts 2" in normal speech needs a verse or a cue to count.
             if BibleBooks.ambiguousSpoken.contains(book.name), !hasVerse, !hasCue { continue }
             var ref = BibleReference(bookNumber: book.number, chapter: ch)
-            ref.verseStart = g(3).flatMap(Int.init)
+            ref.verseStart = verseFromNumber ? num : g(3).flatMap(Int.init)
             ref.verseEnd = g(4).flatMap(Int.init)
             let key = ref.display
             if let last = recent[key], now.timeIntervalSince(last) < 90 { continue }

@@ -98,6 +98,12 @@ final class ListeningService {
 
         let input = audio.inputNode
         let format = input.outputFormat(forBus: 0)
+        // With no input device (or a saved one that's gone) the format has no sample rate, and installing a tap on it
+        // raises an exception that would take the whole app down. Check first.
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            lastError = "No audio input is available. Plug one in (or pick another in the list) and try again."
+            return
+        }
         input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] buffer, _ in
             // Runs on the audio thread: append to the current request and meter.
@@ -120,11 +126,19 @@ final class ListeningService {
         }
     }
 
-    @ObservationIgnored nonisolated(unsafe) private var currentRequest: SFSpeechAudioBufferRecognitionRequest?
+    /// The request the audio thread feeds, swapped on the main thread every ~50 s: guarded by a lock.
+    private final class RequestBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var request: SFSpeechAudioBufferRecognitionRequest?
+        func set(_ r: SFSpeechAudioBufferRecognitionRequest?) { lock.lock(); request = r; lock.unlock() }
+        func append(_ b: AVAudioPCMBuffer) { lock.lock(); request?.append(b); lock.unlock() }
+    }
+    @ObservationIgnored private let requestBox = RequestBox()
     @ObservationIgnored nonisolated(unsafe) private var meter: Float = 0
+    @ObservationIgnored private var errorStreak = 0
 
     nonisolated private func append(_ buffer: AVAudioPCMBuffer) {
-        currentRequest?.append(buffer)
+        requestBox.append(buffer)
         if let ch = buffer.floatChannelData?[0] {
             var sum: Float = 0
             let n = Int(buffer.frameLength)
@@ -142,16 +156,20 @@ final class ListeningService {
         if recognizer?.supportsOnDeviceRecognition == true { req.requiresOnDeviceRecognition = true }
         req.contextualStrings = contextualStrings()
         request = req
-        currentRequest = req
+        requestBox.set(req)
         consumedWords = 0
         task = recognizer?.recognitionTask(with: req) { [weak self] result, error in
             let text = result?.bestTranscription.formattedString
             Task { @MainActor in
                 guard let self else { return }
-                if let text { self.handle(text) }
+                if let text { self.errorStreak = 0; self.handle(text) }
                 if error != nil, self.isListening, self.request === req {
-                    // Silence or a hiccup ended the task — start a fresh one.
-                    self.beginTask()
+                    // Silence or a hiccup ended the task: start a fresh one, backing off if it keeps failing
+                    // (an unavailable recognizer must not become a tight loop on the main thread).
+                    self.errorStreak += 1
+                    let delay = min(8.0, 0.5 * pow(2.0, Double(self.errorStreak - 1)))
+                    try? await Task.sleep(for: .seconds(delay))
+                    if self.isListening, self.request === req { self.beginTask() }
                 }
             }
         }
@@ -175,7 +193,7 @@ final class ListeningService {
         task = nil
         request?.endAudio()
         request = nil
-        currentRequest = nil
+        requestBox.set(nil)
         audio.inputNode.removeTap(onBus: 0)
         audio.stop()
         isListening = false
@@ -226,7 +244,10 @@ final class ListeningService {
         case .offScript:
             status = "Off-script — holding"
         case .advance(let i), .jump(let i):
-            if autoAdvance {
+            // Moving to the next slide is routine; jumping somewhere else is a bigger claim, so it needs strong evidence.
+            var isJump = false
+            if case .jump = d.kind { isJump = true }
+            if autoAdvance, !(isJump && d.confidence < 0.8) {
                 engine.trigger(p, index: i)
                 // Keep the last couple of words: they often begin the next line.
                 consumedWords = max(0, words.count - 2)

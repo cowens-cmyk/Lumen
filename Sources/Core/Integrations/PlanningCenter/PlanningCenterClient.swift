@@ -78,6 +78,20 @@ struct PlanningCenterClient {
             .map { ($0.id, $0.string("name") ?? $0.id) }
     }
 
+    /// How many future plans a service type has (the real "Sunday Morning" is the one with plans coming up).
+    func upcomingPlanCount(serviceType: String) async throws -> Int {
+        guard !appID.isEmpty, !secret.isEmpty else { throw PCOError.notConfigured }
+        var c = URLComponents(string: "https://api.planningcenteronline.com/services/v2/service_types/\(serviceType)/plans")!
+        c.queryItems = [URLQueryItem(name: "filter", value: "future"), URLQueryItem(name: "per_page", value: "1")]
+        var r = URLRequest(url: c.url!, timeoutInterval: 15)
+        r.setValue("Basic " + Data("\(appID):\(secret)".utf8).base64EncodedString(), forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: r)
+        let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        guard code == 200 else { throw PCOError.http(code, "") }
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return (json?["meta"] as? [String: Any])?["total_count"] as? Int ?? 0
+    }
+
     func plans(serviceType: String, from: Date, days: Int) async throws -> [Resource] {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"

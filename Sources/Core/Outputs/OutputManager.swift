@@ -20,6 +20,10 @@ final class OutputManager {
     @ObservationIgnored private var overlayCache: [UUID: (key: String, image: CIImage?)] = [:]
     @ObservationIgnored private var imageCache: [String: CIImage] = [:]
     @ObservationIgnored private var windows: [OutputWindow] = []
+    /// Display outputs by "screenID#destinationIndex", so a display change can redo just those.
+    @ObservationIgnored private var displayWindows: [String: OutputWindow] = [:]
+    @ObservationIgnored private var destinationStatus: [UUID: [Int: String]] = [:]
+    @ObservationIgnored private var refreshTask: Task<Void, Never>?
     @ObservationIgnored private var configSignature = ""
 
     init(store: LibraryStore, engine: LiveEngine) {
@@ -27,9 +31,25 @@ final class OutputManager {
         self.engine = engine
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                                object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.rebuild() }
+            MainActor.assumeIsolated { self?.scheduleDisplayRefresh() }
+        }
+        // If the control window is dragged onto a display that has an output, move that output away from it.
+        NotificationCenter.default.addObserver(forName: NSWindow.didChangeScreenNotification, object: nil, queue: .main) { [weak self] note in
+            MainActor.assumeIsolated {
+                guard let w = note.object as? NSWindow, w.identifier?.rawValue == OutputManager.mainWindowID else { return }
+                self?.scheduleDisplayRefresh()
+            }
         }
     }
+
+    static let mainWindowID = "lumen.main"
+
+    /// The display Lumen's control window is on. Outputs aren't put there (they'd cover the operator's controls).
+    static var operatorScreen: NSScreen? {
+        NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue == mainWindowID }?.screen ?? NSScreen.screens.first
+    }
+
+    static var allowOutputOnOperatorDisplay: Bool { UserDefaults.standard.bool(forKey: "allowOutputOnOperatorDisplay") }
 
     /// Re-creates renderers and sinks if the screen configuration changed.
     func rebuildIfNeeded() {
@@ -42,6 +62,8 @@ final class OutputManager {
         renderers.values.forEach { $0.stop() }
         windows.forEach { $0.close() }
         windows = []
+        displayWindows = [:]
+        destinationStatus = [:]
         renderers = [:]
         slideCache = [:]
         overlayCache = [:]
@@ -56,32 +78,29 @@ final class OutputManager {
             }
             let r = ScreenRenderer(screenID: screen.id, size: size, fps: fps)
             var status: [String] = []
+            destinationStatus[screen.id] = [:]
             if outputsEnabled {
-                for d in screen.destinations {
+                var claimed = Set<UInt32>()
+                for (i, d) in screen.destinations.enumerated() {
                     switch d {
                     case .none: break
                     case .display(let id, let name):
-                        if let ns = NSScreen.screens.first(where: { $0.displayID == id }) ?? NSScreen.screens.first(where: { $0.localizedName == name }) {
-                            let w = OutputWindow(fullscreenOn: ns, title: screen.name)
-                            windows.append(w); r.addSink(w)
-                            status.append("Display \(ns.localizedName): live")
-                        } else {
-                            status.append("Display \(name): not connected")
-                        }
+                        attachDisplay(screen: screen, renderer: r, index: i, id: id, name: name, claimed: &claimed)
                     case .window:
                         let w = OutputWindow(floatingTitle: "\(screen.name) Output", size: size)
                         windows.append(w); r.addSink(w)
-                        status.append("Window: live")
+                        destinationStatus[screen.id]?[i] = "Window: live"
                     case .decklink(let device, let mode, let keyer):
                         let sink = DeckLinkSink(device: device, mode: mode, keyer: keyer)
-                        status.append("DeckLink \(device): \(sink.status)")
+                        destinationStatus[screen.id]?[i] = "DeckLink \(device): \(sink.status)"
                         if sink.isRunning { r.addSink(sink) }
                     case .ndi(let name):
                         let sink = NDISink(name: name, size: size, fps: fps)
-                        status.append("NDI \(name): \(sink.status)")
+                        destinationStatus[screen.id]?[i] = "NDI \(name): \(sink.status)"
                         if sink.isRunning { r.addSink(sink) }
                     }
                 }
+                status = screen.destinations.indices.compactMap { destinationStatus[screen.id]?[$0] }
             } else {
                 status.append("Outputs disabled")
             }
@@ -90,6 +109,59 @@ final class OutputManager {
             r.start()
         }
         update()
+    }
+
+    // MARK: - Display outputs
+
+    /// Puts an output window on a Mac display, safely: never on the operator's own screen, never two outputs on one
+    /// display, and never guessing between identically named displays.
+    private func attachDisplay(screen: Screen, renderer r: ScreenRenderer, index i: Int, id: UInt32, name: String, claimed: inout Set<UInt32>) {
+        func note(_ s: String) { destinationStatus[screen.id]?[i] = s }
+        var match = NSScreen.screens.first { $0.displayID == id }
+        if match == nil {
+            let sameName = NSScreen.screens.filter { $0.localizedName == name }
+            if sameName.count == 1 { match = sameName[0] }
+            else if sameName.count > 1 { note("Display \(name): can't tell which of \(sameName.count) identical displays this was. Pick it again in Setup → Screens"); return }
+        }
+        guard let ns = match else { note("Display \(name): not connected"); return }
+        if ns == Self.operatorScreen, !Self.allowOutputOnOperatorDisplay {
+            note("Skipped — Lumen's control window is on \(ns.localizedName); an output there would cover your controls"); return
+        }
+        guard claimed.insert(ns.displayID).inserted else { note("Skipped — another output already uses \(ns.localizedName)"); return }
+        let w = OutputWindow(fullscreenOn: ns, title: screen.name)
+        windows.append(w)
+        displayWindows["\(screen.id)#\(i)"] = w
+        r.addSink(w)
+        note("Display \(ns.localizedName): live")
+    }
+
+    /// Displays came or went (a projector re-handshaking, a cable pulled): redo only the display windows. DeckLink, NDI
+    /// and floating outputs keep running untouched, so the stream feed doesn't blip because a lobby TV woke up.
+    func scheduleDisplayRefresh() {
+        refreshTask?.cancel()
+        refreshTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(800))   // these notifications arrive in bursts
+            guard !Task.isCancelled else { return }
+            self?.refreshDisplays()
+        }
+    }
+
+    func refreshDisplays() {
+        guard outputsEnabled else { return }
+        var claimed = Set<UInt32>()
+        for screen in store.data.screens where screen.enabled {
+            guard let r = renderers[screen.id] else { continue }
+            for (i, d) in screen.destinations.enumerated() {
+                guard case .display(let id, let name) = d else { continue }
+                if let old = displayWindows["\(screen.id)#\(i)"] {
+                    r.removeSink(old); old.close()
+                    windows.removeAll { $0 === old }
+                    displayWindows["\(screen.id)#\(i)"] = nil
+                }
+                attachDisplay(screen: screen, renderer: r, index: i, id: id, name: name, claimed: &claimed)
+            }
+            statusByScreen[screen.id] = screen.destinations.indices.compactMap { destinationStatus[screen.id]?[$0] }
+        }
     }
 
     // MARK: - Scene building
@@ -125,7 +197,7 @@ final class OutputManager {
     /// (or if it isn't the active loop) the theme color shows instead of a hole.
     private func themeBackground(for m: MediaRef, fallback: RGBA) -> SceneBackground {
         guard m.kind == .video else { return background(for: m) }
-        return engine.media.backgroundLocation == m.location ? .live(LiveFrames.backgroundKey, m.scale) : .color(fallback)
+        return engine.media.backgroundLocation == m.location ? .liveOr(LiveFrames.backgroundKey, m.scale, fallback) : .color(fallback)
     }
 
     func scene(for screen: Screen, size: CGSize) -> ScreenScene {
@@ -188,7 +260,10 @@ final class OutputManager {
     private func cached<V: View>(_ cache: inout [UUID: (key: String, image: CIImage?)], _ id: UUID, _ key: String,
                                  size: CGSize, opaque: Bool, _ make: () -> V) -> CIImage? {
         if let c = cache[id], c.key == key { return c.image }
-        let img = Snapshot.render(make(), size: size, opaque: opaque)
+        guard let img = Snapshot.render(make(), size: size, opaque: opaque) else {
+            // A failed render must never blank the screen: keep what's showing and try again on the next change.
+            return cache[id]?.image
+        }
         cache[id] = (key, img)
         return img
     }

@@ -31,7 +31,7 @@ button{cursor:pointer}button:active{transform:scale(.97)}
 .on{background:var(--accent)!important;color:#111!important}
 </style></head><body>
 <header><h1 id="title">Lumen</h1><select id="look" title="Look"></select></header>
-<div id="pin"><p>Enter the remote PIN shown in Lumen → Settings → Remote.</p><input id="pinval" inputmode="numeric" placeholder="PIN"> <button onclick="savePin()">Connect</button></div>
+<div id="pin"><p id="pinmsg">Enter the remote PIN shown in Lumen → Setup → Remote &amp; MIDI.</p><input id="pinval" inputmode="numeric" placeholder="PIN"> <button onclick="savePin()">Connect</button></div>
 <div id="app">
  <div class="section"><h2>Live</h2><div id="live" class="grid"></div></div>
  <div class="section"><h2>Clear</h2><div class="row">
@@ -47,32 +47,40 @@ button{cursor:pointer}button:active{transform:scale(.97)}
 </div>
 <div class="bar"><button onclick="cmd({cmd:'prev'})">◀ Prev</button><button class="next" onclick="cmd({cmd:'next'})">Next ▶</button></div>
 <script>
-let pin=localStorage.getItem('lumenPin')||'',state=null,plSel=localStorage.getItem('lumenPl')||'',browsing=null;
+let pin=localStorage.getItem('lumenPin')||'',locked=false,state=null,plSel=localStorage.getItem('lumenPl')||'',browsing=null;
 const $=id=>document.getElementById(id);
-function savePin(){pin=$('pinval').value;localStorage.setItem('lumenPin',pin);$('pin').style.display='none';$('app').style.display='';poll()}
+// Everything from the show (song titles, lyrics, timer names) is untrusted text: build elements, never HTML strings.
+function el(tag,props,...kids){const e=document.createElement(tag);for(const k in (props||{})){if(k==='class')e.className=props[k];else if(k==='style')e.style.cssText=props[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),props[k]);else e.setAttribute(k,props[k])}
+ for(const c of kids.flat())e.append(c&&c.nodeType?c:document.createTextNode(c==null?'':String(c)));return e}
+function fill(parent,...kids){parent.replaceChildren(...kids.flat())}
+function lock(msg){locked=true;$('pin').style.display='block';$('app').style.display='none';document.querySelector('.bar').style.display='none';$('pinmsg').textContent=msg}
+function unlock(){locked=false;$('pin').style.display='none';$('app').style.display='';document.querySelector('.bar').style.display=''}
+function savePin(){pin=$('pinval').value;localStorage.setItem('lumenPin',pin);unlock();poll()}
 async function api(path,opts={}){opts.headers=Object.assign({'X-Lumen-PIN':pin,'Content-Type':'application/json'},opts.headers||{});
- const r=await fetch(path,opts);if(r.status==401){$('pin').style.display='block';$('app').style.display='none';throw 'pin'}return r.json()}
-async function cmd(b){try{await api('/api/cmd',{method:'POST',body:JSON.stringify(b)});poll()}catch(e){}}
-function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function slides(el,list,id,liveIdx,plid){el.innerHTML=list.map((s,i)=>`<button class="slide ${i==liveIdx?'live':''}" onclick="cmd({cmd:'trigger',id:'${id}',index:${i},playlist:'${plid||''}'})"><span class="g" style="color:${s.color}">${esc(s.group)}</span>${esc(s.text)}</button>`).join('')}
-async function openPres(id,name){browsing=await api('/api/presentation?id='+id);$('browseSec').style.display='';$('browseTitle').textContent=name;render();$('browseSec').scrollIntoView({behavior:'smooth'})}
+ const r=await fetch(path,opts);if(r.status==401||r.status==429){lock(r.status==429?'Too many wrong PINs. Wait a minute, then enter the PIN again.':'Enter the remote PIN shown in Lumen → Setup → Remote & MIDI.');throw 'pin'}if(locked)unlock();return r.json()}
+async function cmd(b){if(locked)return;try{await api('/api/cmd',{method:'POST',body:JSON.stringify(b)});poll()}catch(e){}}
+function slides(box,list,id,liveIdx,plid){fill(box,list.map((s,i)=>el('button',{class:'slide'+(i==liveIdx?' live':''),onclick:()=>cmd({cmd:'trigger',id:id,index:i,playlist:plid||''})},
+ el('span',{class:'g',style:'color:'+(/^#[0-9a-fA-F]{3,8}$/.test(s.color)?s.color:'#888')},s.group),s.text)))}
+async function openPres(id,name){browsing=await api('/api/presentation?id='+encodeURIComponent(id));$('browseSec').style.display='';$('browseTitle').textContent=name;render();$('browseSec').scrollIntoView({behavior:'smooth'})}
 function render(){if(!state)return;const L=state.live;$('title').textContent=L.name||'Lumen';
  slides($('live'),L.slides||[],L.id,L.cleared?-1:L.index,'');
- $('look').innerHTML=state.looks.map(l=>`<option value="${l.id}" ${l.id==state.lookID?'selected':''}>${esc(l.name)}</option>`).join('');
- $('macros').innerHTML=state.macros.map(m=>`<button style="border-color:${m.color}" onclick="cmd({cmd:'macro',id:'${m.id}'})">${esc(m.name)}</button>`).join('');
- $('props').innerHTML=state.props.map(p=>`<button class="${p.active?'on':''}" onclick="cmd({cmd:'prop',id:'${p.id}'})">${esc(p.name)}</button>`).join('');
- $('timers').innerHTML=state.timers.map(t=>`<div class="row" style="align-items:center;margin-bottom:6px"><span style="flex:2">${esc(t.name)}</span><b style="flex:1;font-variant-numeric:tabular-nums">${t.value}</b><button onclick="cmd({cmd:'timer',id:'${t.id}',action:'${t.running?'stop':'start'}'})">${t.running?'Stop':'Start'}</button><button onclick="cmd({cmd:'timer',id:'${t.id}',action:'reset'})">Reset</button></div>`).join('');
+ fill($('look'),state.looks.map(l=>el('option',{value:l.id,selected:l.id==state.lookID?'':null},l.name)));
+ fill($('macros'),state.macros.map(m=>el('button',{style:'border-color:'+(/^#[0-9a-fA-F]{3,8}$/.test(m.color)?m.color:'#888'),onclick:()=>cmd({cmd:'macro',id:m.id})},m.name)));
+ fill($('props'),state.props.map(p=>el('button',{class:p.active?'on':'',onclick:()=>cmd({cmd:'prop',id:p.id})},p.name)));
+ fill($('timers'),state.timers.map(t=>el('div',{class:'row',style:'align-items:center;margin-bottom:6px'},el('span',{style:'flex:2'},t.name),el('b',{style:'flex:1;font-variant-numeric:tabular-nums'},t.value),
+   el('button',{onclick:()=>cmd({cmd:'timer',id:t.id,action:t.running?'stop':'start'})},t.running?'Stop':'Start'),el('button',{onclick:()=>cmd({cmd:'timer',id:t.id,action:'reset'})},'Reset'))));
  if(!plSel&&state.playlists.length)plSel=state.playlists[0].id;
- $('pl').innerHTML=state.playlists.map(p=>`<option value="${p.id}" ${p.id==plSel?'selected':''}>${esc(p.name)}</option>`).join('');
+ fill($('pl'),state.playlists.map(p=>el('option',{value:p.id,selected:p.id==plSel?'':null},p.name)));
  const pl=state.playlists.find(p=>p.id==plSel);
- $('items').innerHTML=pl?pl.items.map(it=>it.type=='header'?`<div class="hdr">${esc(it.name)}</div>`:it.type=='placeholder'?`<button class="ph" disabled>${esc(it.name)}</button>`:`<button onclick="openPres('${it.id}','${esc(it.name).replace(/'/g,"")}')">${esc(it.name)} ${it.id==L.id?'<span class="tag" style="background:#ef4444">LIVE</span>':''}</button>`).join(''):'';
+ fill($('items'),pl?pl.items.map(it=>it.type=='header'?el('div',{class:'hdr'},it.name):it.type=='placeholder'?el('button',{class:'ph',disabled:''},it.name)
+   :el('button',{onclick:()=>openPres(it.id,it.name)},it.name,it.id==L.id?el('span',{class:'tag',style:'background:#ef4444;margin-left:8px'},'LIVE'):'')):[]);
  if(browsing)slides($('browse'),browsing.slides,browsing.id,browsing.id==L.id&&!L.cleared?L.index:-1,plSel);
 }
 $('look').onchange=e=>cmd({cmd:'look',id:e.target.value});
 $('pl').onchange=e=>{plSel=e.target.value;localStorage.setItem('lumenPl',plSel);render()};
-async function poll(){try{state=await api('/api/state');render()}catch(e){}}
+async function poll(){if(locked)return;try{state=await api('/api/state');render()}catch(e){}}
 setInterval(poll,700);poll();
-document.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT')return;if(e.key=='ArrowRight'||e.key==' ')cmd({cmd:'next'});if(e.key=='ArrowLeft')cmd({cmd:'prev'})});
+document.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.repeat)return;if(e.key=='ArrowRight'||e.key==' ')cmd({cmd:'next'});if(e.key=='ArrowLeft')cmd({cmd:'prev'})});
 </script></body></html>
 """#
 
@@ -97,14 +105,14 @@ html,body{margin:0;height:100%;background:#000;color:#fff;font-family:-apple-sys
 const $=id=>document.getElementById(id);
 async function poll(){try{const s=await (await fetch('/api/stage')).json();
 $('clock').textContent=s.clock||'';
-const esc=x=>(x||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const chordHTML=ls=>'<div>'+ls.map(l=>'<span class="cl">'+l.map(g=>`<span class="sg"><b>${esc(g.c)}${g.c?'&nbsp;':''}</b>${esc(g.t)||'&nbsp;'}</span>`).join('')+'</span>').join('')+'</div>';
-if(s.currentChords&&s.currentChords.length){$('cur').innerHTML=chordHTML(s.currentChords)}else{$('cur').textContent=s.current||''}
-if(s.nextChordLines&&s.nextChordLines.length){$('nextt').innerHTML=chordHTML(s.nextChordLines)}else{$('nextt').textContent=s.next||'—'}
+const el=(t,p,...k)=>{const e=document.createElement(t);for(const x in (p||{})){if(x==='style')e.style.cssText=p[x];else e.setAttribute(x,p[x])}for(const c of k.flat())e.append(c&&c.nodeType?c:document.createTextNode(c==null?'':String(c)));return e};
+const chordHTML=ls=>el('div',{},ls.map(l=>el('span',{class:'cl'},l.map(g=>el('span',{class:'sg'},el('b',{},(g.c||'')+(g.c?'\u00a0':'')),g.t||'\u00a0')))));
+if(s.currentChords&&s.currentChords.length){$('cur').replaceChildren(chordHTML(s.currentChords))}else{$('cur').textContent=s.current||''}
+if(s.nextChordLines&&s.nextChordLines.length){$('nextt').replaceChildren(chordHTML(s.nextChordLines))}else{$('nextt').textContent=s.next||'—'}
 if(s.key)$('ng').textContent+=' · KEY '+s.key;
 $('ng').textContent=s.nextGroup?'NEXT • '+s.nextGroup.toUpperCase():'NEXT';$('notes').textContent=s.notes||'';
 $('msg').style.display=s.message?'block':'none';$('msg').textContent=s.message||'';
-$('timers').innerHTML=(s.timers||[]).map(t=>`<div class="t"><small>${t.name}</small><b style="color:${t.value.startsWith('-')?'#ef4444':'#fff'}">${t.value}</b></div>`).join('')}catch(e){}}
+$('timers').replaceChildren(...(s.timers||[]).map(t=>el('div',{class:'t'},el('small',{},t.name),el('b',{style:'color:'+(String(t.value).startsWith('-')?'#ef4444':'#fff')},t.value))))}catch(e){}}
 setInterval(poll,400);poll();
 </script></body></html>
 """#

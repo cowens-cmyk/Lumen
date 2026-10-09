@@ -56,7 +56,11 @@ final class DeckLinkSink: FrameSink {
 
     func stop() {
         isRunning = false
-        queue.sync { output?.stop() }
+        // Never let a wedged card hang the control window: wait a couple of seconds at most.
+        let g = DispatchGroup()
+        g.enter()
+        queue.async { [output] in output?.stop(); g.leave() }
+        _ = g.wait(timeout: .now() + 2)
     }
 }
 
@@ -81,15 +85,29 @@ final class NDISink: FrameSink {
         status = isRunning ? "live" : "couldn't create sender"
     }
 
+    private let busyLock = NSLock()
+    private var busy = false
+
     func send(_ buffer: CVPixelBuffer) {
-        guard let sender else { return }
+        guard isRunning, let sender else { return }
+        // Drop a frame rather than queue behind a slow network; never stall the compositor.
+        busyLock.lock()
+        if busy { busyLock.unlock(); return }
+        busy = true
+        busyLock.unlock()
         let fps = fps
-        queue.async { sender.send(buffer, frameRate: fps) }
+        queue.async { [weak self] in
+            sender.send(buffer, frameRate: fps)
+            self?.busyLock.lock(); self?.busy = false; self?.busyLock.unlock()
+        }
     }
 
     func stop() {
         isRunning = false
-        queue.sync { sender?.stop() }
+        let g = DispatchGroup()
+        g.enter()
+        queue.async { [sender] in sender?.stop(); g.leave() }
+        _ = g.wait(timeout: .now() + 2)
     }
 }
 
@@ -97,6 +115,9 @@ final class NDISink: FrameSink {
 @MainActor
 final class NDIReceiveManager {
     private var receivers: [String: LMNDIReceiver] = [:]
+    private var flags: [String: ActiveFlag] = [:]
+
+    final class ActiveFlag: @unchecked Sendable { var on = true }
     private(set) var lastError: String?
 
     var available: Bool { LMNDI.sdkCompiledIn() && LMNDI.runtimeAvailable() }
@@ -113,12 +134,17 @@ final class NDIReceiveManager {
             return
         }
         let key = LiveFrames.ndiKey(source)
+        let flag = ActiveFlag()
+        flags[source] = flag
         receivers[source] = LMNDIReceiver(source: source) { pb in
+            guard flag.on else { return }      // the receiver thread can deliver one more frame after stop
             LiveFrames.shared.set(key, CIImage(cvPixelBuffer: pb))
         }
     }
 
     func stop(source: String) {
+        flags[source]?.on = false
+        flags[source] = nil
         receivers[source]?.stop()
         receivers[source] = nil
         LiveFrames.shared.set(LiveFrames.ndiKey(source), nil)

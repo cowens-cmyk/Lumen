@@ -59,7 +59,7 @@ struct SlideGrid: View {
                 .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            if store(p) == nil {
+            if store(p) == nil, !app.volunteerMode {
                 Button("Save to Library") { app.keep(p) }
             }
             if p.kind == .media || p.slideshow.enabled {
@@ -72,19 +72,23 @@ struct SlideGrid: View {
                     Label(app.engine.slideshowInterval == nil ? "Slideshow" : "Stop", systemImage: app.engine.slideshowInterval == nil ? "play.rectangle" : "stop.fill")
                 }
             }
+            if !app.volunteerMode {
             Button { app.addToSelectedPlaylist(p.id) } label: { Image(systemName: "text.badge.plus") }
                 .help("Add to current playlist")
                 .disabled(app.selectedPlaylistID == nil)
-            if p.kind == .song {
+            }
+            if p.kind == .song, !app.volunteerMode {
                 Button { app.editorInitialMode = 4; app.editingPresentationID = p.id } label: {
                     Label(p.key.map { "Chords · \($0)" } ?? "Chords", systemImage: "music.quarternote.3")
                 }
                 .disabled(store(p) == nil)
                 .help("Import a chord chart PDF and edit the Nashville numbers shown on the stage display")
             }
-            Button("Edit") { app.editingPresentationID = p.id }
-                .disabled(store(p) == nil)
-            Slider(value: $thumbSize, in: 140...360).frame(width: 90).help("Thumbnail size")
+            if !app.volunteerMode {
+                Button("Edit") { app.editingPresentationID = p.id }
+                    .disabled(store(p) == nil)
+                Slider(value: $thumbSize, in: 140...360).frame(width: 90).help("Thumbnail size")
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
     }
@@ -142,7 +146,7 @@ struct SlideThumb: View {
         }
         .contentShape(Rectangle())
         .contextMenu {
-            if let m = ref.slide.media, m.kind == .video {
+            if !app.volunteerMode, let m = ref.slide.media, m.kind == .video {
                 Section("When this video ends") {
                     ForEach(MediaEndChoice.allCases.filter { $0 != .custom }) { c in
                         Button {

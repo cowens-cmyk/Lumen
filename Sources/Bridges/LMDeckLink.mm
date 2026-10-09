@@ -184,7 +184,7 @@ static IDeckLink *LMFindDevice(NSString *wanted) {
     size_t rows = MIN((size_t)_height, CVPixelBufferGetHeight(buffer));
     size_t rowBytes = MIN((size_t)_width * 4, CVPixelBufferGetWidth(buffer) * 4);
     void *dst = NULL;
-#if defined(BLACKMAGIC_DECKLINK_API_VERSION) && BLACKMAGIC_DECKLINK_API_VERSION >= 0x0f000000
+#if defined(BLACKMAGIC_DECKLINK_API_VERSION) && BLACKMAGIC_DECKLINK_API_VERSION >= 0x0e030000
     IDeckLinkVideoBuffer *vb = NULL;
     if (_frame->QueryInterface(IID_IDeckLinkVideoBuffer, (void **)&vb) == S_OK) {
         vb->StartAccess(bmdBufferAccessWrite);
@@ -198,7 +198,7 @@ static IDeckLink *LMFindDevice(NSString *wanted) {
             memcpy((uint8_t *)dst + y * _width * 4, src + y * srcStride, rowBytes);
         }
     }
-#if defined(BLACKMAGIC_DECKLINK_API_VERSION) && BLACKMAGIC_DECKLINK_API_VERSION >= 0x0f000000
+#if defined(BLACKMAGIC_DECKLINK_API_VERSION) && BLACKMAGIC_DECKLINK_API_VERSION >= 0x0e030000
     if (vb) { vb->EndAccess(bmdBufferAccessWrite); vb->Release(); }
 #endif
     CVPixelBufferUnlockBaseAddress(buffer, kCVPixelBufferLock_ReadOnly);

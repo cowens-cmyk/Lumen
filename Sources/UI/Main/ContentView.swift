@@ -15,6 +15,24 @@ struct ContentView: View {
                 operatorView
             }
         }
+        .overlay(alignment: .top) {
+            if let r = app.recovery {
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.counterclockwise.circle.fill").foregroundStyle(.orange).font(.title3)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Lumen closed unexpectedly").font(.headline)
+                        Text("Last on screen: \(r.presentationName ?? "a slide") — slide \((r.index ?? 0) + 1)").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Button("Put It Back on Screen") { app.restoreSession() }.buttonStyle(.borderedProminent)
+                    Button("Dismiss") { app.recovery = nil }
+                }
+                .padding(12)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .shadow(radius: 8)
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         .overlay(alignment: .bottom) {
             if let t = app.toast {
                 Text(t).padding(.horizontal, 16).padding(.vertical, 10)
@@ -22,7 +40,9 @@ struct ContentView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .background(WindowTagger(identifier: OutputManager.mainWindowID))
         .animation(.easeInOut, value: app.toast)
+        .animation(.easeInOut, value: app.recovery)
         .sheet(item: Binding(get: { app.editingPresentationID.map(IDBox.init) },
                              set: { app.editingPresentationID = $0?.id })) { box in
             PresentationEditor(presentationID: box.id).environment(app)
@@ -34,9 +54,10 @@ struct ContentView: View {
                 let access = urls.map { $0.startAccessingSecurityScopedResource() }
                 defer { zip(urls, access).forEach { if $1 { $0.stopAccessingSecurityScopedResource() } } }
                 do {
-                    let ps = try await Importer(store: app.store).importFiles(urls)
-                    app.selectedPresentationID = ps.first?.id
-                    app.flash("Imported \(ps.count) item\(ps.count == 1 ? "" : "s")")
+                    let r = try await Importer(store: app.store).importFiles(urls)
+                    app.selectedPresentationID = r.presentations.first?.id
+                    app.flash("Imported \(r.presentations.count) item\(r.presentations.count == 1 ? "" : "s")"
+                              + (r.failures.isEmpty ? "" : " — couldn't import: " + r.failures.joined(separator: "; ")))
                 } catch {
                     app.flash(error.localizedDescription)
                 }
@@ -63,6 +84,19 @@ struct ContentView: View {
 
 struct IDBox: Identifiable { var id: UUID }
 
+/// Gives the hosting NSWindow a stable identifier so the app can tell its control window from sheets and outputs.
+struct WindowTagger: NSViewRepresentable {
+    var identifier: String
+    func makeNSView(context: Context) -> NSView {
+        let v = NSView()
+        DispatchQueue.main.async { v.window?.identifier = NSUserInterfaceItemIdentifier(identifier) }
+        return v
+    }
+    func updateNSView(_ v: NSView, context: Context) {
+        DispatchQueue.main.async { v.window?.identifier = NSUserInterfaceItemIdentifier(identifier) }
+    }
+}
+
 struct MainToolbar: ToolbarContent {
     @Environment(AppModel.self) private var app
 
@@ -85,7 +119,7 @@ struct MainToolbar: ToolbarContent {
             .help(app.pco.lastSync.map { "Planning Center synced \($0.formatted(date: .omitted, time: .shortened))" } ?? "Sync Planning Center")
             .disabled(app.pco.isSyncing)
             Button {
-                app.outputs.outputsEnabled.toggle()
+                app.toggleOutputs()
             } label: {
                 Label("Outputs", systemImage: app.outputs.outputsEnabled ? "display" : "display.trianglebadge.exclamationmark")
             }

@@ -28,11 +28,16 @@ struct Importer {
     ]
 
     /// Imports any supported file(s) and returns created presentations.
-    func importFiles(_ urls: [URL]) async throws -> [Presentation] {
+    struct Outcome { var presentations: [Presentation] = []; var failures: [String] = [] }
+
+    /// Imports every file it can; a bad file is reported and skipped, never discarding the rest of the batch.
+    func importFiles(_ urls: [URL]) async throws -> Outcome {
         var out: [Presentation] = []
+        var failures: [String] = []
         let images = urls.filter { UTType(filenameExtension: $0.pathExtension)?.conforms(to: .image) == true }
         if !images.isEmpty { out.append(imagePresentation(images)) }
         for url in urls where !images.contains(url) {
+          do {
             let ext = url.pathExtension.lowercased()
             let type = UTType(filenameExtension: ext)
             if type?.conforms(to: .movie) == true || type?.conforms(to: .audio) == true {
@@ -62,9 +67,13 @@ struct Importer {
             } else {
                 throw ImportError.unsupported(ext)
             }
+          } catch {
+            failures.append("\(url.lastPathComponent): \(error.localizedDescription)")
+          }
         }
+        if out.isEmpty, let first = failures.first, urls.count == failures.count { throw ImportError.keynoteFailed(first) }
         out.forEach(store.upsert)
-        return out
+        return Outcome(presentations: out, failures: failures)
     }
 
     private var maxLines: Int { store.resolvedTheme(for: Presentation(name: "", kind: .song)).maxLinesPerSlide }

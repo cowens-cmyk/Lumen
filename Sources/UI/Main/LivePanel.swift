@@ -40,16 +40,17 @@ struct LivePanel: View {
           LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 8)], spacing: 8) {
             ForEach(app.store.data.screens.filter(\.enabled)) { screen in
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack {
-                        Text(screen.name).font(.caption.bold())
-                        Text(screen.role.title).font(.caption2).foregroundStyle(.secondary)
-                        Spacer()
-                        let status = app.outputs.statusByScreen[screen.id] ?? []
-                        Text(status.isEmpty ? "No output assigned" : status.joined(separator: " · "))
-                            .font(.caption2)
-                            .foregroundStyle(status.contains { $0.contains("live") } ? .green : .secondary)
-                            .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(screen.name).font(.caption.bold()).lineLimit(1)
+                        if let r = app.outputs.renderers[screen.id] { HealthBadge(renderer: r) }
+                        Spacer(minLength: 0)
                     }
+                    let status = app.outputs.statusByScreen[screen.id] ?? []
+                    Text(status.isEmpty ? "No output assigned" : status.joined(separator: " · "))
+                        .font(.caption2)
+                        .foregroundStyle(status.contains { $0.contains("live") } ? .green : .secondary)
+                        .lineLimit(1)
+                        .help(status.joined(separator: "\n"))
                     Color.black
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .overlay {
@@ -76,5 +77,24 @@ struct LivePanel: View {
             }
         }
         .padding(10)
+    }
+}
+
+
+/// Measured output rate, so a struggling output is obvious before the room notices.
+struct HealthBadge: View {
+    var renderer: ScreenRenderer
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 2)) { _ in
+            let h = renderer.health
+            Text(h.totalFrames < 10 ? "…" : String(format: "%.0f fps", h.fps))
+                .font(.caption2.monospacedDigit())
+                .lineLimit(1).fixedSize()
+                .padding(.horizontal, 4)
+                .background((h.isHealthy ? Color.green : Color.red).opacity(0.25), in: Capsule())
+                .foregroundStyle(h.isHealthy ? Color.green : Color.red)
+                .help(String(format: "Target %.0f fps · render avg %.1f ms · worst %.1f ms · %d slow frames of %d",
+                             h.targetFPS, h.avgMs, h.maxMs, h.lateFrames, h.totalFrames))
+        }
     }
 }

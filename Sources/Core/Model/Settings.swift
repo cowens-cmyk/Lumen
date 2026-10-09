@@ -57,4 +57,48 @@ struct AppSettings: Codable, Hashable {
     // Calendar
     var calendarTriggersEnabled = false
     var calendarName: String = ""
+
+    enum CodingKeys: String, CodingKey {
+        case pcoAppID, pcoServiceTypeIDs, pcoSyncDaysAhead, pcoAutoSyncMinutes, pcoTemplateID, bibleProvider, bibleTranslation, bibleVersesPerSlide, bibleMaxCharsPerSlide, defaultThemeByKind, defaultLookID, transitionSeconds, defaultMediaScale, remoteEnabled, remotePort, remotePIN, volunteerPIN, startInVolunteerMode, midiEnabled, midiOutputName, listenInputDeviceUID, lyricFollowAutoAdvance, lyricFollowThreshold, scriptureDetection, speechLocale, calendarTriggersEnabled, calendarName
+    }
+
+    /// A missing or unreadable setting falls back to its default, so adding a setting in a new version never
+    /// makes an older settings file unreadable (and never costs anyone their library).
+    init(from decoder: Decoder) throws {
+        self.init()
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        func read<T: Decodable>(_ key: CodingKeys, _ path: WritableKeyPath<AppSettings, T>) {
+            if let v = try? c.decode(T.self, forKey: key) { self[keyPath: path] = v }
+        }
+        read(.pcoAppID, \.pcoAppID)
+        read(.pcoServiceTypeIDs, \.pcoServiceTypeIDs)
+        read(.pcoSyncDaysAhead, \.pcoSyncDaysAhead)
+        read(.pcoAutoSyncMinutes, \.pcoAutoSyncMinutes)
+        read(.pcoTemplateID, \.pcoTemplateID)
+        read(.bibleProvider, \.bibleProvider)
+        read(.bibleTranslation, \.bibleTranslation)
+        read(.bibleVersesPerSlide, \.bibleVersesPerSlide)
+        read(.bibleMaxCharsPerSlide, \.bibleMaxCharsPerSlide)
+        read(.defaultThemeByKind, \.defaultThemeByKind)
+        read(.defaultLookID, \.defaultLookID)
+        read(.transitionSeconds, \.transitionSeconds)
+        read(.defaultMediaScale, \.defaultMediaScale)
+        read(.remoteEnabled, \.remoteEnabled)
+        read(.remotePort, \.remotePort)
+        read(.remotePIN, \.remotePIN)
+        read(.volunteerPIN, \.volunteerPIN)
+        read(.startInVolunteerMode, \.startInVolunteerMode)
+        read(.midiEnabled, \.midiEnabled)
+        read(.midiOutputName, \.midiOutputName)
+        read(.listenInputDeviceUID, \.listenInputDeviceUID)
+        read(.lyricFollowAutoAdvance, \.lyricFollowAutoAdvance)
+        read(.lyricFollowThreshold, \.lyricFollowThreshold)
+        read(.scriptureDetection, \.scriptureDetection)
+        read(.speechLocale, \.speechLocale)
+        read(.calendarTriggersEnabled, \.calendarTriggersEnabled)
+        read(.calendarName, \.calendarName)
+    }
+
+    init() {}
+
 }

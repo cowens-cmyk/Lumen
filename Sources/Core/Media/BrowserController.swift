@@ -20,6 +20,7 @@ final class BrowserController: NSObject {
     @ObservationIgnored private var stream: SCStream?
     @ObservationIgnored private let output = WebStreamOutput()
     @ObservationIgnored private var titleObservation: NSKeyValueObservation?
+    @ObservationIgnored private var isStarting = false
 
     override init() {
         let cfg = WKWebViewConfiguration()
@@ -72,11 +73,20 @@ final class BrowserController: NSObject {
     }
 
     func startCapture() {
-        guard stream == nil, let window else { return }
+        guard stream == nil, !isStarting, let window else { return }
+        isStarting = true
         Task {
+            defer { isStarting = false }
             do {
-                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
-                guard let scWindow = content.windows.first(where: { $0.windowID == CGWindowID(window.windowNumber) }) else {
+                // A brand-new window can take a moment to show up as shareable content: look a few times before giving up.
+                var found: SCWindow?
+                for attempt in 0..<6 {
+                    let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+                    found = content.windows.first(where: { $0.windowID == CGWindowID(window.windowNumber) })
+                    if found != nil { break }
+                    try await Task.sleep(for: .milliseconds(400 * (attempt + 1)))
+                }
+                guard let scWindow = found else {
                     lastError = "Couldn't find the browser window to capture."
                     return
                 }
@@ -89,7 +99,7 @@ final class BrowserController: NSObject {
                 cfg.showsCursor = false
                 cfg.capturesAudio = false
                 cfg.scalesToFit = true
-                let s = SCStream(filter: filter, configuration: cfg, delegate: nil)
+                let s = SCStream(filter: filter, configuration: cfg, delegate: self)
                 try s.addStreamOutput(output, type: .screen, sampleHandlerQueue: output.queue)
                 try await s.startCapture()
                 stream = s
@@ -127,5 +137,21 @@ final class WebStreamOutput: NSObject, SCStreamOutput, @unchecked Sendable {
             return
         }
         LiveFrames.shared.set(LiveFrames.webKey, CIImage(cvPixelBuffer: pb))
+    }
+}
+
+
+extension BrowserController: SCStreamDelegate {
+    /// The capture stopped on its own (display sleep, permission change, window closed). Don't pretend it's still live;
+    /// try once to bring it back.
+    nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) {
+        Task { @MainActor in
+            self.stream = nil
+            self.isCapturing = false
+            LiveFrames.shared.set(LiveFrames.webKey, nil)
+            self.lastError = "The browser picture stopped (\(error.localizedDescription)). Restarting it…"
+            try? await Task.sleep(for: .seconds(1))
+            if self.window?.isVisible == true { self.startCapture() }
+        }
     }
 }
