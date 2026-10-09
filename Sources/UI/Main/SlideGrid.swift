@@ -5,7 +5,7 @@ struct SlideGrid: View {
     @AppStorage("thumbSize") private var thumbSize = 220.0
 
     var body: some View {
-        if let p = app.selectedPresentation {
+        if let p = app.selectedPresentation ?? app.engine.livePresentation {
             VStack(spacing: 0) {
                 header(p)
                 Divider()

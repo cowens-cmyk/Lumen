@@ -6,3 +6,4 @@ Vendor/DeckLinkSDK/*
 !Vendor/DeckLinkSDK/.gitkeep
 Vendor/NDISDK/*
 !Vendor/NDISDK/.gitkeep
+Screenshots/
