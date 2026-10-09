@@ -56,8 +56,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: org.hopejc.Lumen
         PRODUCT_NAME: Lumen
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "2"
         ENABLE_HARDENED_RUNTIME: YES
         SWIFT_OBJC_BRIDGING_HEADER: Sources/Bridges/Lumen-Bridging-Header.h
         HEADER_SEARCH_PATHS:
