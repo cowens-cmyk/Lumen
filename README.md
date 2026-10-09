@@ -2,6 +2,12 @@
 
 A native macOS presentation and show-control app for church services, built in Swift, SwiftUI and Core Image/Metal.
 
+## Install
+
+Download `Lumen-<version>.dmg` from the GitHub release, open it, and drag Lumen to Applications. The app is signed with the Hope Church Developer ID but not yet notarized. The first time, right-click Lumen.app and choose **Open**, then confirm (or go to System Settings → Privacy & Security → Open Anyway).
+
+To build a DMG yourself, run `Scripts/make_dmg.sh`. It writes `dist/Lumen-<version>.dmg`, and notarizes it automatically if a `lumen-notary` notarytool profile is saved on the Mac (see the comment at the top of the script).
+
 ## Build
 
 ```bash
