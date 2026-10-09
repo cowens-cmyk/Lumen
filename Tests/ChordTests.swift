@@ -80,7 +80,7 @@ final class ChordChartReaderTests: XCTestCase {
         XCTAssertEqual(l1.chords.map(\.chord), ["G", "C", "G"])
         XCTAssertEqual(l1.chords.map(\.index), [0, 18, 28])   // "A", "s"(weet), "s"(ound)
         let l2 = chart.sections[0].lines[1]
-        XCTAssertEqual(l2.chords.map(\.index), [9, 26])        // "d" of saved, "e" of me
+        XCTAssertEqual(l2.chords.map(\.index), [9, 27])        // "d" of saved; D comes after "me" (held)
     }
 
     func testChordProChart() throws {
@@ -172,5 +172,76 @@ final class ChordChartReaderTests: XCTestCase {
         XCTAssertEqual(c[0].chords.map(\.index), [0, 14])  // "Cornerstone"
         XCTAssertEqual(c[1].chords.map(\.index), [0, 17, 32])
         XCTAssertEqual(Nashville.number(for: c[0].chords[1].chord, key: MusicKey(chart.key!)!), "5/7")
+    }
+
+    /// Mirrors a PraiseCharts "Numbers" 2-column chart: number chords, "ho - ly" syllables,
+    /// chords held after a word, page headers repeated, copyright footer, and a roadmap line.
+    func testNumbersChartWithSyllablesAndFooter() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("nums-\(UUID().uuidString).pdf")
+        var box = CGRect(x: 0, y: 0, width: 612, height: 792)
+        let ctx = CGContext(url as CFURL, mediaBox: &box, nil)!
+        let lyricFont = CTFontCreateWithName("Helvetica" as CFString, 12, nil)
+        let boldFont = CTFontCreateWithName("Helvetica-Bold" as CFString, 11, nil)
+        func width(_ s: String, _ f: CTFont) -> CGFloat {
+            CTLineGetTypographicBounds(CTLineCreateWithAttributedString(NSAttributedString(string: s, attributes: [.font: f])), nil, nil, nil)
+        }
+        func draw(_ s: String, _ font: CTFont, x: CGFloat, y: CGFloat) {
+            ctx.textPosition = CGPoint(x: x, y: y)
+            CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: s, attributes: [.font: font])), ctx)
+        }
+        /// Lyric pieces with an optional chord; chords may also float `after` a piece.
+        func line(_ parts: [(String, String?)], y: CGFloat, x0: CGFloat = 40, after: [(Int, String, CGFloat)] = []) {
+            var x = x0
+            var starts: [CGFloat] = []
+            for (text, chord) in parts {
+                starts.append(x)
+                if let chord { draw(chord, boldFont, x: x, y: y + 14) }
+                draw(text, lyricFont, x: x, y: y)
+                x += width(text, lyricFont)
+            }
+            for (i, chord, dx) in after { draw(chord, boldFont, x: starts[i] + width(parts[i].0, lyricFont) + dx, y: y + 14) }
+        }
+        func header() {
+            draw("Test Song", CTFontCreateWithName("Helvetica-Bold" as CFString, 18, nil), x: 40, y: 742)
+            draw("www.example.com/123", lyricFont, x: 40, y: 712)
+            draw("Key: Numbers \u{00B7} Time: 4/4", lyricFont, x: 330, y: 712)
+            draw("Test Artist", lyricFont, x: 40, y: 700)
+        }
+        ctx.beginPDFPage(nil)
+        header()
+        draw("Chorus 1", boldFont, x: 40, y: 660)
+        line([("And the angels ", nil), ("cry, ", "4"), ("ho  ", "6m"), ("-  ", nil), ("ly", "5")], y: 630)
+        line([("Holy for - ", nil), ("ever", "1")], y: 600, after: [(1, "1sus", 14), (1, "1", 44)])
+        draw("Verse 2", boldFont, x: 40, y: 560)
+        line([("And if you've been re - ", nil), ("deemed", "1")], y: 530)
+        draw("Pre-Chorus 1 > Chorus 1 >", boldFont, x: 330, y: 660)
+        ctx.endPDFPage()
+        ctx.beginPDFPage(nil)
+        header()
+        draw("Tag", boldFont, x: 40, y: 660)
+        line([("We'll ", nil), ("sing the song for - ", "6m"), ("ever", "5")], y: 630)
+        draw("\u{00A9} 2026 Some Publisher (Admin by Someone)", lyricFont, x: 40, y: 590)
+        draw("Music Group. CCLI Song No. 123. Unauthorized distribution", lyricFont, x: 40, y: 578)
+        ctx.endPDFPage()
+        ctx.closePDF()
+
+        let chart = try ChordChartReader.read(url: url)
+        XCTAssertNil(chart.key, "a Numbers chart has no letter key")
+        XCTAssertEqual(chart.title, "Test Song")
+        XCTAssertEqual(chart.roadmap, ["Pre-Chorus 1", "Chorus 1"])
+        XCTAssertEqual(chart.sections.map(\.name), ["Chorus 1", "Verse 2", "Tag"])
+        func cp(_ l: ChordChart.Line) -> String {
+            ChordPro.encode(text: l.lyric, chords: l.chords.map { ChordPlacement(line: 0, index: $0.index, chord: $0.chord) })
+        }
+        XCTAssertEqual(cp(chart.sections[0].lines[0]), "And the angels [4]cry, [6m]ho[5]ly")
+        XCTAssertEqual(cp(chart.sections[0].lines[1]), "Holy for[1]ever[1sus][1]")
+        XCTAssertEqual(cp(chart.sections[1].lines[0]), "And if you've been re[1]deemed")
+        XCTAssertEqual(chart.sections[2].lines.count, 1, "page header and copyright must not become lyrics")
+        XCTAssertEqual(cp(chart.sections[2].lines[0]), "We'll [6m]sing the song for[5]ever")
+
+        // Numbers display as-is with no key; with a key, letters can be shown.
+        XCTAssertEqual(ChordLayout.label("6m", key: nil, style: .nashville), "6m")
+        XCTAssertEqual(ChordLayout.label("1/3", key: "G", style: .letters), "G/B")
+        XCTAssertEqual(ChordLayout.label("6m", key: "G", style: .both), "6m Em")
     }
 }

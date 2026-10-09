@@ -146,7 +146,7 @@ enum ChordLayout {
     }
 
     static func segments(line: String, chords: [ChordPlacement]) -> [Segment] {
-        let sorted = chords.sorted { $0.index < $1.index }
+        let sorted = chords.enumerated().sorted { ($0.element.index, $0.offset) < ($1.element.index, $1.offset) }.map(\.element)
         guard !sorted.isEmpty else { return [Segment(chord: nil, text: line)] }
         let chars = Array(line)
         var out: [Segment] = []
@@ -164,10 +164,14 @@ enum ChordLayout {
 
     static func label(_ chord: String, key: String?, style: ChordStyle) -> String {
         guard let key, let k = MusicKey(key) else { return chord }
+        // Charts can be written in numbers ("6m") or letters ("Em"); show whichever the style asks for.
+        let isNumber = Chord.isNumberChord(chord)
+        let number = isNumber ? chord : Nashville.number(for: chord, key: k)
+        let letter = isNumber ? (Nashville.letter(for: chord, key: k) ?? chord) : chord
         switch style {
-        case .letters: return chord
-        case .nashville: return Nashville.number(for: chord, key: k)
-        case .both: return "\(Nashville.number(for: chord, key: k)) \(chord)"
+        case .letters: return letter
+        case .nashville: return number
+        case .both: return "\(number) \(letter)"
         }
     }
 }

@@ -50,10 +50,23 @@ struct Chord: Hashable {
 
     /// Whether a token on a chart looks like a chord (not a lyric word like "A" or "Em…" in a sentence).
     static func isChordToken(_ t: String) -> Bool {
-        let s = t.trimmingCharacters(in: CharacterSet(charactersIn: "()[]|,"))
+        let s = t.trimmingCharacters(in: CharacterSet(charactersIn: "[]|,"))
         if s.isEmpty { return false }
-        if ["N.C.", "NC", "N.C", "x2", "x3", "x4", "2x", "3x", "4x", "/", "-", "|", "%"].contains(s) { return true }
-        return Chord(s) != nil
+        if ["N.C.", "NC", "N.C", "x2", "x3", "x4", "2x", "3x", "4x", "/", "-", "|", "%", "(", ")"].contains(s) { return true }
+        return isRealChord(s)
+    }
+
+    /// A letter chord ("D/F#") or a Nashville number chord ("6m", "1/3", "5(4)", "2m7", "b7").
+    static func isRealChord(_ t: String) -> Bool {
+        let s = t.trimmingCharacters(in: CharacterSet(charactersIn: "[]|,"))
+        return Chord(s.trimmingCharacters(in: CharacterSet(charactersIn: "()"))) != nil || isNumberChord(s)
+    }
+
+    private static let numberPattern = try! NSRegularExpression(pattern:
+        #"^[b#♭♯]?[1-7](?:maj|min|m|M|dim|aug|sus|add|°|ø|\+|-|Δ|\d|\(|\)|b|#|♭|♯)*(?:/[b#♭♯]?[1-7])?$"#)
+
+    static func isNumberChord(_ s: String) -> Bool {
+        numberPattern.firstMatch(in: s, range: NSRange(location: 0, length: (s as NSString).length)) != nil
     }
 }
 
@@ -151,7 +164,9 @@ enum ChordPro {
         text.components(separatedBy: "\n").enumerated().map { i, line in
             var chars = Array(line)
             // Insert from the right so earlier indices stay valid.
-            for p in chords.filter({ $0.line == i }).sorted(by: { $0.index > $1.index }) {
+            // Right to left so earlier indices stay valid; same-index chords keep their written order.
+            let onLine = chords.filter { $0.line == i }.enumerated().sorted { ($0.element.index, $0.offset) > ($1.element.index, $1.offset) }
+            for p in onLine.map(\.element) {
                 let at = min(max(0, p.index), chars.count)
                 chars.insert(contentsOf: Array("[\(p.chord)]"), at: at)
             }

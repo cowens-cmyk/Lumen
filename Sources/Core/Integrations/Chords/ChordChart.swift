@@ -20,6 +20,8 @@ struct ChordChart: Hashable {
 
     var title: String = ""
     var key: String?
+    /// Section order if the chart prints one ("Intro > Verse 1 > Chorus …").
+    var roadmap: [String] = []
     var sections: [Section] = []
 
     var allChords: [String] { sections.flatMap { $0.lines.flatMap { $0.chords.map(\.chord) } } }
@@ -43,8 +45,15 @@ struct PlacedLine {
     /// Rebuilds the line as text, inserting a single space wherever glyphs are visibly apart,
     /// and returns each character's x so chords can be dropped onto the right letter.
     func text() -> (string: String, xs: [CGFloat], tokens: [(text: String, x: CGFloat)]) {
+        let t = layout()
+        return (t.string, t.xs, t.tokens)
+    }
+
+    /// Like `text()`, plus each character's width so word ends are exact.
+    func layout() -> (string: String, xs: [CGFloat], widths: [CGFloat], tokens: [(text: String, x: CGFloat)]) {
         var s = ""
         var xs: [CGFloat] = []
+        var ws: [CGFloat] = []
         var tokens: [(String, CGFloat)] = []
         var current = ""
         var currentX: CGFloat = 0
@@ -53,16 +62,16 @@ struct PlacedLine {
             if i > 0 {
                 let prev = glyphs[i - 1]
                 if g.x - (prev.x + prev.width) >= gapThreshold {
-                    s.append(" "); xs.append(prev.x + prev.width)
+                    s.append(" "); xs.append(prev.x + prev.width); ws.append(g.x - (prev.x + prev.width))
                     tokens.append((current, currentX)); current = ""
                 }
             }
             if current.isEmpty { currentX = g.x }
             current.append(g.char)
-            s.append(g.char); xs.append(g.x)
+            s.append(g.char); xs.append(g.x); ws.append(g.width)
         }
         if !current.isEmpty { tokens.append((current, currentX)) }
-        return (s, xs, tokens)
+        return (s, xs, ws, tokens)
     }
 }
 
@@ -238,7 +247,7 @@ enum ChordChartReader {
 
     // MARK: Parsing
 
-    private static let metaWords = ["ccli", "tempo", "bpm", "time -", "time:", "©", "copyright", "words and music", "music by",
+    private static let metaWords = ["www.", ".com/", "ccli", "tempo", "bpm", "time -", "time:", "©", "copyright", "words and music", "music by",
                                     "words by", "for use solely", "license", "page ", "capo", "time signature", "arranged by"]
 
     static func detectKey(_ s: String) -> String? {
@@ -254,10 +263,73 @@ enum ChordChartReader {
         return LyricParser.heading(cleaned)
     }
 
+    static func isRoadmap(_ line: String) -> Bool {
+        let parts = line.components(separatedBy: CharacterSet(charactersIn: ">→")).map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return parts.count >= 2 && parts.allSatisfy { sectionName($0) != nil }
+    }
+
+    /// Picks the character a chord belongs to. Chords sit at (or just right of) the start of a syllable;
+    /// one floating in the gap between words belongs to whichever word start is nearer.
+    static func place(chordX: CGFloat, string: String, xs: [CGFloat], widths: [CGFloat], height: CGFloat) -> Int {
+        let words = ChordMatcher.wordSpans(string)
+        guard !words.isEmpty, !xs.isEmpty else { return 0 }
+        let snap = height * 0.5
+        func end(_ w: (start: Int, length: Int, norm: String)) -> CGFloat {
+            let lastI = w.start + w.length - 1
+            return xs[lastI] + (widths[safe: lastI] ?? height * 0.55)
+        }
+        for w in words {
+            let sx = xs[w.start]
+            let lastI = w.start + w.length - 1
+            let ex = end(w)
+            if chordX >= sx - snap * 0.4, chordX < ex - height * 0.15 {
+                if chordX - sx < snap { return w.start }
+                // Mid-word (a held note changing chord): the letter under the chord.
+                let i = xs.lastIndex(where: { $0 <= chordX + height * 0.15 }) ?? w.start
+                return min(max(i, w.start), lastI)
+            }
+        }
+        let prev = words.last { xs[$0.start] <= chordX }
+        let next = words.first { xs[$0.start] > chordX }
+        switch (prev, next) {
+        case let (p?, n?):
+            return chordX - xs[p.start] < xs[n.start] - chordX ? p.start : n.start
+        case let (nil, n?):
+            return n.start
+        case let (p?, nil):
+            // Past the last word: a chord change while the note is held.
+            return chordX >= end(p) - height * 0.1 ? string.count : p.start
+        default:
+            return 0
+        }
+    }
+
+    /// "be - lieve" → "believe", moving chords with the text (a chord on the dash goes to the next syllable).
+    static func joinSyllables(_ text: String, _ chords: [(index: Int, chord: String)]) -> (text: String, chords: [(index: Int, chord: String)]) {
+        var chars = Array(text)
+        var cs = chords
+        var i = 1
+        while i + 2 < chars.count {
+            if chars[i] == " ", chars[i + 1] == "-", i + 2 < chars.count, chars[i + 2] == " ",
+               chars[i - 1].isLetter, i + 3 < chars.count, chars[i + 3].isLetter {
+                chars.removeSubrange(i...(i + 2))
+                cs = cs.map { c in
+                    if c.index < i { return c }
+                    if c.index < i + 3 { return (index: i, chord: c.chord) }
+                    return (index: c.index - 3, chord: c.chord)
+                }
+            } else {
+                i += 1
+            }
+        }
+        return (String(chars), cs)
+    }
+
     static func isChordLine(_ tokens: [(text: String, x: CGFloat)]) -> Bool {
         let real = tokens.filter { !["|", "/", "-", "%"].contains($0.text) }
         guard !real.isEmpty else { return false }
-        return real.allSatisfy { Chord.isChordToken($0.text) } && real.contains { Chord($0.text) != nil }
+        return real.allSatisfy { Chord.isChordToken($0.text) } && real.contains { Chord.isRealChord($0.text) }
     }
 
     static func parse(_ lines: [PlacedLine], fallbackTitle: String) -> ChordChart {
@@ -266,6 +338,10 @@ enum ChordChartReader {
         var pendingChords: [(text: String, x: CGFloat)]? = nil
         var titleCandidates: [String] = []
         var seenContent = false
+        var inFooter = false
+        var headerLines: Set<String> {
+            Set(titleCandidates)
+        }
 
         func flushSection() {
             if !section.lines.isEmpty { chart.sections.append(section) }
@@ -274,22 +350,33 @@ enum ChordChartReader {
         func flushPendingAsInstrumental() {
             if let p = pendingChords {
                 section.lines.append(.init(lyric: "", chords: p.enumerated().compactMap { i, t in
-                    Chord(t.text) != nil ? (index: i * 4, chord: t.text) : nil
+                    Chord.isRealChord(t.text) ? (index: i * 4, chord: t.text) : nil
                 }))
                 pendingChords = nil
             }
         }
 
         for line in lines {
-            let (string, xs, tokens) = line.text()
+            let (string, xs, widths, tokens) = line.layout()
             let trimmed = string.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { continue }
             if chart.key == nil, let k = detectKey(trimmed) { chart.key = k }
             let lower = trimmed.lowercased()
             if lower.contains("key") && detectKey(trimmed) != nil && !isChordLine(tokens) { continue }
+            // Copyright blocks run several lines; ignore everything after one until the next section starts.
+            if lower.contains("©") || lower.contains("ccli song") || lower.contains("unauthorized") { inFooter = true; continue }
             if metaWords.contains(where: { lower.contains($0) }) { continue }
+            // Repeated page headers (title, artist, website) on page 2+.
+            if seenContent, headerLines.contains(trimmed) { continue }
+            // Roadmap: "Intro > Verse 1 > Chorus > …"
+            if isRoadmap(trimmed) {
+                chart.roadmap += trimmed.components(separatedBy: CharacterSet(charactersIn: ">→|,"))
+                    .compactMap { sectionName($0) }
+                continue
+            }
 
             if let name = sectionName(trimmed) {
+                inFooter = false
                 flushPendingAsInstrumental()
                 flushSection()
                 section.name = name
@@ -306,9 +393,10 @@ enum ChordChartReader {
                 seenContent = true
                 continue
             }
+            if inFooter { continue }
             if isChordLine(tokens) {
                 flushPendingAsInstrumental()
-                pendingChords = tokens.filter { Chord($0.text) != nil }
+                pendingChords = tokens.filter { Chord.isRealChord($0.text) }
                 seenContent = true
                 continue
             }
@@ -317,19 +405,13 @@ enum ChordChartReader {
             var chords: [(index: Int, chord: String)] = []
             if let p = pendingChords {
                 for t in p {
-                    // The chord sits over the last character that starts at or before its left edge.
-                    let tolerance = line.height * 0.15
-                    var idx = xs.lastIndex(where: { $0 <= t.x + tolerance }) ?? 0
-                    if let last = xs.last, t.x > last + line.height { idx = string.count } // chord past the end of the words
-                    // Don't land on a space when the next letter is right there.
-                    let chars = Array(string)
-                    if idx < chars.count, chars[idx] == " ", idx + 1 < chars.count { idx += 1 }
-                    chords.append((index: min(idx, string.count), chord: t.text))
+                    chords.append((index: place(chordX: t.x, string: string, xs: xs, widths: widths, height: line.height), chord: t.text))
                 }
                 pendingChords = nil
             }
+            let joined = joinSyllables(string, chords)
             if section.name.isEmpty { section.name = "Verse 1" }
-            section.lines.append(.init(lyric: string, chords: chords))
+            section.lines.append(.init(lyric: joined.text, chords: joined.chords))
         }
         flushPendingAsInstrumental()
         flushSection()
