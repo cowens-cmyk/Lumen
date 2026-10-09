@@ -1,0 +1,8 @@
+build/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+.DS_Store
+Vendor/DeckLinkSDK/*
+!Vendor/DeckLinkSDK/.gitkeep
+Vendor/NDISDK/*
+!Vendor/NDISDK/.gitkeep

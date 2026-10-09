@@ -1,0 +1,809 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		007939493ECDC524199C36A3 /* LyricFollower.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49957E313B75D9694754A9FB /* LyricFollower.swift */; };
+		02C072360F8DB238C41E7DEB /* BrowserController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB430595558DC092AC74E6B /* BrowserController.swift */; };
+		076818DAF875B34E1F0E53B3 /* HardwareSinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADCD742F642B2B30318EEE7 /* HardwareSinks.swift */; };
+		0F8B336FCC17A312455AA62D /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92687044A1286889831F2FBF /* MIDIManager.swift */; };
+		114B034FD593637987CE0CE8 /* ScripturePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CBC870DFA2660D3963391D4 /* ScripturePanel.swift */; };
+		2A52B96C4377476D1D84AD2D /* PlanningCenterSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522D5FF9DBAD9A4A4C0721C5 /* PlanningCenterSync.swift */; };
+		2CD832EEDB344DF98AE2CB01 /* RemoteServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35AF2ACA368E26BC819183E /* RemoteServer.swift */; };
+		39898430737DF5118AE7E692 /* MediaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACAF51701B2325A3FB29B97 /* MediaEngine.swift */; };
+		43FE731B44957A48C09B3DE4 /* StageCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62A26C26891DD674F2434716 /* StageCanvas.swift */; };
+		47BF4E7B34930971CF0B9D95 /* LMDeckLink.mm in Sources */ = {isa = PBXBuildFile; fileRef = 470D9DAA1C72E244BA569699 /* LMDeckLink.mm */; };
+		5361D97E8BB09178532D2CD3 /* LumenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3531FE66E808C5BF721C5245 /* LumenTests.swift */; };
+		552E92204B65351EAF6CC1A8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 683C461E03431A7EBD9F9C6F /* Models.swift */; };
+		5A5D48752498C408F69674D0 /* MediaPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5473ECA31F33D0FBEE4B3991 /* MediaPanel.swift */; };
+		5C2B228EEB37D8101F09E30F /* LyricParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCE2DD61C82F610C4F9C75C /* LyricParser.swift */; };
+		5F7B84A468606E40766BB4E8 /* LMNDI.mm in Sources */ = {isa = PBXBuildFile; fileRef = AE8CEA1CBF0990FA5AE1ED08 /* LMNDI.mm */; };
+		60C3615133D692376E997D36 /* BibleProviders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE92645FE516CCFD116F3B5 /* BibleProviders.swift */; };
+		63D1F08306A2B869F53C182C /* ListenPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84CA4FCC1FF37F12F092CAF5 /* ListenPanel.swift */; };
+		69EC60888CCEC6E8003BC3BA /* PresentationEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687315DB262F0F413350B565 /* PresentationEditor.swift */; };
+		6F19C616DB2D0DBC660EB5C7 /* SlideCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0642F9D535145E87507EE /* SlideCanvas.swift */; };
+		73A47A27986A055C37257A2E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0759EB89B140117A919CB57C /* ContentView.swift */; };
+		7A757DA44A93A9160A2F389D /* ScreenRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0D0EC241CAB160B7B9AA65 /* ScreenRenderer.swift */; };
+		806EF2021DD7928CD92524FA /* LumenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87EF32918A0E39FA3B5E2525 /* LumenApp.swift */; };
+		832E7F7300BF36E9690CF1E6 /* ThemeEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 450980EAE2351DF3A4F969DF /* ThemeEditor.swift */; };
+		8832CFF48B8FFE122252703D /* LiveFrames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026BA1E3ED44965751E9C096 /* LiveFrames.swift */; };
+		899CCDA8FA81CAD545A44E4D /* OutputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD1FD62382F4A8886188F20 /* OutputManager.swift */; };
+		91983E27649D92D5EAF32FDD /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B00006618BD4C3981A0B056 /* Library.swift */; };
+		94E02BFE9B3CF91EE0385536 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041E10D972E1F269AF9C88A6 /* SettingsView.swift */; };
+		96D45EF09AE6E9728F9308CB /* RemotePages.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A3FA73A6C168D62DD54BAF /* RemotePages.swift */; };
+		9BAAED2839CD4843DB7A8DA1 /* CaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54296DA840CAE28E08BA9B2F /* CaptureManager.swift */; };
+		A7E7DFFB1E8DE9DD0FAE0318 /* VolunteerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC19D78C46BA6CF09E29A9A9 /* VolunteerView.swift */; };
+		A8BD27BFA409A8CA8F21BC22 /* Common.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8000FF3A30A85C0CA339C3 /* Common.swift */; };
+		ADA8C9A140CDBDA404315D52 /* BibleBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC7B86F5D9DCCC790FC50BF4 /* BibleBooks.swift */; };
+		B934E507CCAF5B47E382E3DE /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 954CEE9D11F354DB4E7D9D99 /* Scheduler.swift */; };
+		BB5D32D3084D20837823A00B /* SlideGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BFC6AF4162C3FEEF1FA239 /* SlideGrid.swift */; };
+		BB95F34ADCD7217A07496708 /* LiveEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7AB8B2D4629C760E20A5254 /* LiveEngine.swift */; };
+		C01FE5C7B0497C3994CBE5C9 /* ScriptureDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D20AFBAAB0477E14752FE4 /* ScriptureDetector.swift */; };
+		C4CC5C1118FD9BE7A48029B0 /* ActionListEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46566F45EBFC92B389CCD626 /* ActionListEditor.swift */; };
+		CA7098B8DB95CFDF50E8FFC0 /* Importer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FAF0D7853563DEB1601EF4 /* Importer.swift */; };
+		CC0590011476D2A0AEB8C107 /* TimerRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD5E41ED42F717D0FE8D18B /* TimerRuntime.swift */; };
+		CFB3F08B4416B6B59578E58A /* ShowPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D4875F3D41B3F5E0E8F7FD /* ShowPanels.swift */; };
+		D4732FA5F397170C6E4AE7C5 /* BibleReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF063365AC269E37FF5B421 /* BibleReference.swift */; };
+		D64145C379C49D0A35DE581C /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2F72A8716D1BC0A0334763 /* SeedData.swift */; };
+		E79655286757F68B9C01D388 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB52D76879331310C09D2E5 /* AppModel.swift */; };
+		EF595CEFABB6B5A565F04D3E /* PlanningCenterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AC2166BED083561FC06EA51 /* PlanningCenterClient.swift */; };
+		F051BCB828A42A0D15AAB935 /* ScriptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58733FC4F4B261E110984BA2 /* ScriptureService.swift */; };
+		F4979F79C70D290D929BDB28 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE0FA9A3AB5D5ABF18EEC15 /* Settings.swift */; };
+		F6D90D73FCDC661C906C6B2C /* Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98BC8F33EA2E0C3644375D88 /* Sidebar.swift */; };
+		FC33C81D008F3E306B531025 /* LivePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5407BE081D57931D9CFE35 /* LivePanel.swift */; };
+		FD3EAE4A198C5D7A335B62D1 /* ListeningService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC4B10F45FC983325AD09AFA /* ListeningService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DB725742CE448EF98C4DE745 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B6B7785E344ACFF4DA083092 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3604D51825E37895FA8BE7E6;
+			remoteInfo = Lumen;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		026BA1E3ED44965751E9C096 /* LiveFrames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFrames.swift; sourceTree = "<group>"; };
+		041E10D972E1F269AF9C88A6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0759EB89B140117A919CB57C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0EE92645FE516CCFD116F3B5 /* BibleProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleProviders.swift; sourceTree = "<group>"; };
+		1D2F72A8716D1BC0A0334763 /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
+		1EB430595558DC092AC74E6B /* BrowserController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserController.swift; sourceTree = "<group>"; };
+		20FAF0D7853563DEB1601EF4 /* Importer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Importer.swift; sourceTree = "<group>"; };
+		2AC2166BED083561FC06EA51 /* PlanningCenterClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningCenterClient.swift; sourceTree = "<group>"; };
+		2ACAF51701B2325A3FB29B97 /* MediaEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaEngine.swift; sourceTree = "<group>"; };
+		2CBC870DFA2660D3963391D4 /* ScripturePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePanel.swift; sourceTree = "<group>"; };
+		2CC0642F9D535145E87507EE /* SlideCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideCanvas.swift; sourceTree = "<group>"; };
+		337A3269E47126DC851115EE /* Lumen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumen.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3531FE66E808C5BF721C5245 /* LumenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenTests.swift; sourceTree = "<group>"; };
+		3EE0FA9A3AB5D5ABF18EEC15 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		43F3B58D045D2AED57BDBE8E /* LMNDI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMNDI.h; sourceTree = "<group>"; };
+		44BFC6AF4162C3FEEF1FA239 /* SlideGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideGrid.swift; sourceTree = "<group>"; };
+		450980EAE2351DF3A4F969DF /* ThemeEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeEditor.swift; sourceTree = "<group>"; };
+		46566F45EBFC92B389CCD626 /* ActionListEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionListEditor.swift; sourceTree = "<group>"; };
+		470D9DAA1C72E244BA569699 /* LMDeckLink.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMDeckLink.mm; sourceTree = "<group>"; };
+		49957E313B75D9694754A9FB /* LyricFollower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricFollower.swift; sourceTree = "<group>"; };
+		4C8000FF3A30A85C0CA339C3 /* Common.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Common.swift; sourceTree = "<group>"; };
+		522D5FF9DBAD9A4A4C0721C5 /* PlanningCenterSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningCenterSync.swift; sourceTree = "<group>"; };
+		54296DA840CAE28E08BA9B2F /* CaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureManager.swift; sourceTree = "<group>"; };
+		5473ECA31F33D0FBEE4B3991 /* MediaPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPanel.swift; sourceTree = "<group>"; };
+		58733FC4F4B261E110984BA2 /* ScriptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureService.swift; sourceTree = "<group>"; };
+		5FD1FD62382F4A8886188F20 /* OutputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputManager.swift; sourceTree = "<group>"; };
+		62A26C26891DD674F2434716 /* StageCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageCanvas.swift; sourceTree = "<group>"; };
+		683C461E03431A7EBD9F9C6F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		687315DB262F0F413350B565 /* PresentationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationEditor.swift; sourceTree = "<group>"; };
+		6B00006618BD4C3981A0B056 /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
+		6BB52D76879331310C09D2E5 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		76D4875F3D41B3F5E0E8F7FD /* ShowPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowPanels.swift; sourceTree = "<group>"; };
+		7A5407BE081D57931D9CFE35 /* LivePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePanel.swift; sourceTree = "<group>"; };
+		81309530E47B5A000C22F1F2 /* LMDeckLink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMDeckLink.h; sourceTree = "<group>"; };
+		84CA4FCC1FF37F12F092CAF5 /* ListenPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenPanel.swift; sourceTree = "<group>"; };
+		87EF32918A0E39FA3B5E2525 /* LumenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenApp.swift; sourceTree = "<group>"; };
+		92687044A1286889831F2FBF /* MIDIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIManager.swift; sourceTree = "<group>"; };
+		954CEE9D11F354DB4E7D9D99 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
+		98BC8F33EA2E0C3644375D88 /* Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sidebar.swift; sourceTree = "<group>"; };
+		9C0D0EC241CAB160B7B9AA65 /* ScreenRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRenderer.swift; sourceTree = "<group>"; };
+		A4751398EBC7F336E22627E2 /* Lumen.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lumen.entitlements; sourceTree = "<group>"; };
+		A7AB8B2D4629C760E20A5254 /* LiveEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveEngine.swift; sourceTree = "<group>"; };
+		AADCD742F642B2B30318EEE7 /* HardwareSinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareSinks.swift; sourceTree = "<group>"; };
+		AE73A19B90407A1926A8BBB0 /* LumenTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE8CEA1CBF0990FA5AE1ED08 /* LMNDI.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMNDI.mm; sourceTree = "<group>"; };
+		BC0BC34B7782A895F701B13B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C1D20AFBAAB0477E14752FE4 /* ScriptureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureDetector.swift; sourceTree = "<group>"; };
+		CC7B86F5D9DCCC790FC50BF4 /* BibleBooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleBooks.swift; sourceTree = "<group>"; };
+		DCCE2DD61C82F610C4F9C75C /* LyricParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricParser.swift; sourceTree = "<group>"; };
+		DFCBB8EC6CB6A962B64E1BA8 /* Lumen-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Lumen-Bridging-Header.h"; sourceTree = "<group>"; };
+		E35AF2ACA368E26BC819183E /* RemoteServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteServer.swift; sourceTree = "<group>"; };
+		EC19D78C46BA6CF09E29A9A9 /* VolunteerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolunteerView.swift; sourceTree = "<group>"; };
+		EC4B10F45FC983325AD09AFA /* ListeningService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningService.swift; sourceTree = "<group>"; };
+		ECF063365AC269E37FF5B421 /* BibleReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleReference.swift; sourceTree = "<group>"; };
+		F6A3FA73A6C168D62DD54BAF /* RemotePages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemotePages.swift; sourceTree = "<group>"; };
+		FAD5E41ED42F717D0FE8D18B /* TimerRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerRuntime.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		142CC8794FD548F1C22F1DD0 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				041E10D972E1F269AF9C88A6 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		1559C141473DC20C0817F517 /* Panels */ = {
+			isa = PBXGroup;
+			children = (
+				84CA4FCC1FF37F12F092CAF5 /* ListenPanel.swift */,
+				5473ECA31F33D0FBEE4B3991 /* MediaPanel.swift */,
+				2CBC870DFA2660D3963391D4 /* ScripturePanel.swift */,
+				76D4875F3D41B3F5E0E8F7FD /* ShowPanels.swift */,
+			);
+			path = Panels;
+			sourceTree = "<group>";
+		};
+		3D6C9A073723A54628361039 = {
+			isa = PBXGroup;
+			children = (
+				D5E78A38929407A64FB9F35D /* Sources */,
+				C3316CAB852D28887A24F55A /* Tests */,
+				70C838A3277A6AAF3F2B0484 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		469BCA4C3101416ED601CFD4 /* Integrations */ = {
+			isa = PBXGroup;
+			children = (
+				8282FB2E9DF101FEDCB6CC93 /* Bible */,
+				A28FF04277779F403ADD3264 /* Import */,
+				A0F583C6C093EE658422E098 /* Lyrics */,
+				D463A9A770495948D8742BAF /* MIDI */,
+				C82AEECFDE5C80204D9FA2A2 /* PlanningCenter */,
+				51425CD5B86109BCB4AE3423 /* Remote */,
+				A8BDB54567E822E6B1FB731B /* Schedule */,
+				477A88D6CCE02D2CBB2A87E1 /* Speech */,
+			);
+			path = Integrations;
+			sourceTree = "<group>";
+		};
+		477A88D6CCE02D2CBB2A87E1 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				EC4B10F45FC983325AD09AFA /* ListeningService.swift */,
+				49957E313B75D9694754A9FB /* LyricFollower.swift */,
+				C1D20AFBAAB0477E14752FE4 /* ScriptureDetector.swift */,
+			);
+			path = Speech;
+			sourceTree = "<group>";
+		};
+		4B537E2276F1A3430A1BB5E8 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				D64D6003C1F72A08C731DB20 /* Editors */,
+				683867CD0E6722B8CCDB717A /* Main */,
+				1559C141473DC20C0817F517 /* Panels */,
+				142CC8794FD548F1C22F1DD0 /* Settings */,
+				63988050C58B0C31C6D2653C /* Volunteer */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		51425CD5B86109BCB4AE3423 /* Remote */ = {
+			isa = PBXGroup;
+			children = (
+				F6A3FA73A6C168D62DD54BAF /* RemotePages.swift */,
+				E35AF2ACA368E26BC819183E /* RemoteServer.swift */,
+			);
+			path = Remote;
+			sourceTree = "<group>";
+		};
+		537160D2E7E7485C9196D2E9 /* Rendering */ = {
+			isa = PBXGroup;
+			children = (
+				9C0D0EC241CAB160B7B9AA65 /* ScreenRenderer.swift */,
+				2CC0642F9D535145E87507EE /* SlideCanvas.swift */,
+				62A26C26891DD674F2434716 /* StageCanvas.swift */,
+			);
+			path = Rendering;
+			sourceTree = "<group>";
+		};
+		63988050C58B0C31C6D2653C /* Volunteer */ = {
+			isa = PBXGroup;
+			children = (
+				EC19D78C46BA6CF09E29A9A9 /* VolunteerView.swift */,
+			);
+			path = Volunteer;
+			sourceTree = "<group>";
+		};
+		683867CD0E6722B8CCDB717A /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				4C8000FF3A30A85C0CA339C3 /* Common.swift */,
+				0759EB89B140117A919CB57C /* ContentView.swift */,
+				7A5407BE081D57931D9CFE35 /* LivePanel.swift */,
+				98BC8F33EA2E0C3644375D88 /* Sidebar.swift */,
+				44BFC6AF4162C3FEEF1FA239 /* SlideGrid.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		698157FE28DF39615691AB81 /* Bridges */ = {
+			isa = PBXGroup;
+			children = (
+				81309530E47B5A000C22F1F2 /* LMDeckLink.h */,
+				470D9DAA1C72E244BA569699 /* LMDeckLink.mm */,
+				43F3B58D045D2AED57BDBE8E /* LMNDI.h */,
+				AE8CEA1CBF0990FA5AE1ED08 /* LMNDI.mm */,
+				DFCBB8EC6CB6A962B64E1BA8 /* Lumen-Bridging-Header.h */,
+			);
+			path = Bridges;
+			sourceTree = "<group>";
+		};
+		6E883EA8EA6D23B3B1728AF1 /* Outputs */ = {
+			isa = PBXGroup;
+			children = (
+				AADCD742F642B2B30318EEE7 /* HardwareSinks.swift */,
+				5FD1FD62382F4A8886188F20 /* OutputManager.swift */,
+			);
+			path = Outputs;
+			sourceTree = "<group>";
+		};
+		70C838A3277A6AAF3F2B0484 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				337A3269E47126DC851115EE /* Lumen.app */,
+				AE73A19B90407A1926A8BBB0 /* LumenTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8282FB2E9DF101FEDCB6CC93 /* Bible */ = {
+			isa = PBXGroup;
+			children = (
+				CC7B86F5D9DCCC790FC50BF4 /* BibleBooks.swift */,
+				0EE92645FE516CCFD116F3B5 /* BibleProviders.swift */,
+				ECF063365AC269E37FF5B421 /* BibleReference.swift */,
+				58733FC4F4B261E110984BA2 /* ScriptureService.swift */,
+			);
+			path = Bible;
+			sourceTree = "<group>";
+		};
+		A0F583C6C093EE658422E098 /* Lyrics */ = {
+			isa = PBXGroup;
+			children = (
+				DCCE2DD61C82F610C4F9C75C /* LyricParser.swift */,
+			);
+			path = Lyrics;
+			sourceTree = "<group>";
+		};
+		A225EE12E9B0EEADDBB790B7 /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				A7AB8B2D4629C760E20A5254 /* LiveEngine.swift */,
+				026BA1E3ED44965751E9C096 /* LiveFrames.swift */,
+				FAD5E41ED42F717D0FE8D18B /* TimerRuntime.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+		A28FF04277779F403ADD3264 /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				20FAF0D7853563DEB1601EF4 /* Importer.swift */,
+			);
+			path = Import;
+			sourceTree = "<group>";
+		};
+		A8BDB54567E822E6B1FB731B /* Schedule */ = {
+			isa = PBXGroup;
+			children = (
+				954CEE9D11F354DB4E7D9D99 /* Scheduler.swift */,
+			);
+			path = Schedule;
+			sourceTree = "<group>";
+		};
+		BB2A7C9E0517471F056BD522 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				6B00006618BD4C3981A0B056 /* Library.swift */,
+				683C461E03431A7EBD9F9C6F /* Models.swift */,
+				1D2F72A8716D1BC0A0334763 /* SeedData.swift */,
+				3EE0FA9A3AB5D5ABF18EEC15 /* Settings.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		BCA65C2ACCB40CB5A6933CF8 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A225EE12E9B0EEADDBB790B7 /* Engine */,
+				469BCA4C3101416ED601CFD4 /* Integrations */,
+				E7C5F434BC6DE71329ABFF87 /* Media */,
+				BB2A7C9E0517471F056BD522 /* Model */,
+				6E883EA8EA6D23B3B1728AF1 /* Outputs */,
+				537160D2E7E7485C9196D2E9 /* Rendering */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		C3316CAB852D28887A24F55A /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				3531FE66E808C5BF721C5245 /* LumenTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		C82AEECFDE5C80204D9FA2A2 /* PlanningCenter */ = {
+			isa = PBXGroup;
+			children = (
+				2AC2166BED083561FC06EA51 /* PlanningCenterClient.swift */,
+				522D5FF9DBAD9A4A4C0721C5 /* PlanningCenterSync.swift */,
+			);
+			path = PlanningCenter;
+			sourceTree = "<group>";
+		};
+		D463A9A770495948D8742BAF /* MIDI */ = {
+			isa = PBXGroup;
+			children = (
+				92687044A1286889831F2FBF /* MIDIManager.swift */,
+			);
+			path = MIDI;
+			sourceTree = "<group>";
+		};
+		D5E78A38929407A64FB9F35D /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				E74A8EC81D68E05FDF363FF0 /* App */,
+				698157FE28DF39615691AB81 /* Bridges */,
+				BCA65C2ACCB40CB5A6933CF8 /* Core */,
+				4B537E2276F1A3430A1BB5E8 /* UI */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		D64D6003C1F72A08C731DB20 /* Editors */ = {
+			isa = PBXGroup;
+			children = (
+				46566F45EBFC92B389CCD626 /* ActionListEditor.swift */,
+				687315DB262F0F413350B565 /* PresentationEditor.swift */,
+				450980EAE2351DF3A4F969DF /* ThemeEditor.swift */,
+			);
+			path = Editors;
+			sourceTree = "<group>";
+		};
+		E74A8EC81D68E05FDF363FF0 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				6BB52D76879331310C09D2E5 /* AppModel.swift */,
+				BC0BC34B7782A895F701B13B /* Info.plist */,
+				A4751398EBC7F336E22627E2 /* Lumen.entitlements */,
+				87EF32918A0E39FA3B5E2525 /* LumenApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		E7C5F434BC6DE71329ABFF87 /* Media */ = {
+			isa = PBXGroup;
+			children = (
+				1EB430595558DC092AC74E6B /* BrowserController.swift */,
+				54296DA840CAE28E08BA9B2F /* CaptureManager.swift */,
+				2ACAF51701B2325A3FB29B97 /* MediaEngine.swift */,
+			);
+			path = Media;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2E79081A5FDB7B19AC8C41BB /* LumenTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 16932A0D91F6D85B9C2F2B98 /* Build configuration list for PBXNativeTarget "LumenTests" */;
+			buildPhases = (
+				19CB0F8005A92715467B8534 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2DFB02D41A7D50C5D9F26F42 /* PBXTargetDependency */,
+			);
+			name = LumenTests;
+			packageProductDependencies = (
+			);
+			productName = LumenTests;
+			productReference = AE73A19B90407A1926A8BBB0 /* LumenTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		3604D51825E37895FA8BE7E6 /* Lumen */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1B1DA35D7489FDDE3E5094CF /* Build configuration list for PBXNativeTarget "Lumen" */;
+			buildPhases = (
+				04E1F8E02FA22F0432CCEA4F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Lumen;
+			packageProductDependencies = (
+			);
+			productName = Lumen;
+			productReference = 337A3269E47126DC851115EE /* Lumen.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B6B7785E344ACFF4DA083092 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					2E79081A5FDB7B19AC8C41BB = {
+						ProvisioningStyle = Automatic;
+					};
+					3604D51825E37895FA8BE7E6 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = CAE5F36F192090F76737D08C /* Build configuration list for PBXProject "Lumen" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3D6C9A073723A54628361039;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 70C838A3277A6AAF3F2B0484 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3604D51825E37895FA8BE7E6 /* Lumen */,
+				2E79081A5FDB7B19AC8C41BB /* LumenTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		04E1F8E02FA22F0432CCEA4F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C4CC5C1118FD9BE7A48029B0 /* ActionListEditor.swift in Sources */,
+				E79655286757F68B9C01D388 /* AppModel.swift in Sources */,
+				ADA8C9A140CDBDA404315D52 /* BibleBooks.swift in Sources */,
+				60C3615133D692376E997D36 /* BibleProviders.swift in Sources */,
+				D4732FA5F397170C6E4AE7C5 /* BibleReference.swift in Sources */,
+				02C072360F8DB238C41E7DEB /* BrowserController.swift in Sources */,
+				9BAAED2839CD4843DB7A8DA1 /* CaptureManager.swift in Sources */,
+				A8BD27BFA409A8CA8F21BC22 /* Common.swift in Sources */,
+				73A47A27986A055C37257A2E /* ContentView.swift in Sources */,
+				076818DAF875B34E1F0E53B3 /* HardwareSinks.swift in Sources */,
+				CA7098B8DB95CFDF50E8FFC0 /* Importer.swift in Sources */,
+				47BF4E7B34930971CF0B9D95 /* LMDeckLink.mm in Sources */,
+				5F7B84A468606E40766BB4E8 /* LMNDI.mm in Sources */,
+				91983E27649D92D5EAF32FDD /* Library.swift in Sources */,
+				63D1F08306A2B869F53C182C /* ListenPanel.swift in Sources */,
+				FD3EAE4A198C5D7A335B62D1 /* ListeningService.swift in Sources */,
+				BB95F34ADCD7217A07496708 /* LiveEngine.swift in Sources */,
+				8832CFF48B8FFE122252703D /* LiveFrames.swift in Sources */,
+				FC33C81D008F3E306B531025 /* LivePanel.swift in Sources */,
+				806EF2021DD7928CD92524FA /* LumenApp.swift in Sources */,
+				007939493ECDC524199C36A3 /* LyricFollower.swift in Sources */,
+				5C2B228EEB37D8101F09E30F /* LyricParser.swift in Sources */,
+				0F8B336FCC17A312455AA62D /* MIDIManager.swift in Sources */,
+				39898430737DF5118AE7E692 /* MediaEngine.swift in Sources */,
+				5A5D48752498C408F69674D0 /* MediaPanel.swift in Sources */,
+				552E92204B65351EAF6CC1A8 /* Models.swift in Sources */,
+				899CCDA8FA81CAD545A44E4D /* OutputManager.swift in Sources */,
+				EF595CEFABB6B5A565F04D3E /* PlanningCenterClient.swift in Sources */,
+				2A52B96C4377476D1D84AD2D /* PlanningCenterSync.swift in Sources */,
+				69EC60888CCEC6E8003BC3BA /* PresentationEditor.swift in Sources */,
+				96D45EF09AE6E9728F9308CB /* RemotePages.swift in Sources */,
+				2CD832EEDB344DF98AE2CB01 /* RemoteServer.swift in Sources */,
+				B934E507CCAF5B47E382E3DE /* Scheduler.swift in Sources */,
+				7A757DA44A93A9160A2F389D /* ScreenRenderer.swift in Sources */,
+				C01FE5C7B0497C3994CBE5C9 /* ScriptureDetector.swift in Sources */,
+				114B034FD593637987CE0CE8 /* ScripturePanel.swift in Sources */,
+				F051BCB828A42A0D15AAB935 /* ScriptureService.swift in Sources */,
+				D64145C379C49D0A35DE581C /* SeedData.swift in Sources */,
+				F4979F79C70D290D929BDB28 /* Settings.swift in Sources */,
+				94E02BFE9B3CF91EE0385536 /* SettingsView.swift in Sources */,
+				CFB3F08B4416B6B59578E58A /* ShowPanels.swift in Sources */,
+				F6D90D73FCDC661C906C6B2C /* Sidebar.swift in Sources */,
+				6F19C616DB2D0DBC660EB5C7 /* SlideCanvas.swift in Sources */,
+				BB5D32D3084D20837823A00B /* SlideGrid.swift in Sources */,
+				43FE731B44957A48C09B3DE4 /* StageCanvas.swift in Sources */,
+				832E7F7300BF36E9690CF1E6 /* ThemeEditor.swift in Sources */,
+				CC0590011476D2A0AEB8C107 /* TimerRuntime.swift in Sources */,
+				A7E7DFFB1E8DE9DD0FAE0318 /* VolunteerView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		19CB0F8005A92715467B8534 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5361D97E8BB09178532D2CD3 /* LumenTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2DFB02D41A7D50C5D9F26F42 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3604D51825E37895FA8BE7E6 /* Lumen */;
+			targetProxy = DB725742CE448EF98C4DE745 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		04898E15276F7A2ED0E62FEF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.hopejc.LumenTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumen.app/Contents/MacOS/Lumen";
+			};
+			name = Debug;
+		};
+		2D2F99B6443D2E21D64FD94E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		46655180DD0530FA8E9360D9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.hopejc.LumenTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Lumen.app/Contents/MacOS/Lumen";
+			};
+			name = Release;
+		};
+		495B8F62CC5EA7D99DAD8F2D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/App/Lumen.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Vendor/DeckLinkSDK/Mac/include",
+					"$(SRCROOT)/Vendor/NDISDK/include",
+					"\"/Library/NDI SDK for Apple/include\"",
+				);
+				INFOPLIST_FILE = Sources/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreFoundation,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.hopejc.Lumen;
+				PRODUCT_NAME = Lumen;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Bridges/Lumen-Bridging-Header.h";
+			};
+			name = Debug;
+		};
+		AA076C7BC7C6C45F1BB03F03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DB69D605D392822F88A42FB2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/App/Lumen.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Vendor/DeckLinkSDK/Mac/include",
+					"$(SRCROOT)/Vendor/NDISDK/include",
+					"\"/Library/NDI SDK for Apple/include\"",
+				);
+				INFOPLIST_FILE = Sources/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreFoundation,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.hopejc.Lumen;
+				PRODUCT_NAME = Lumen;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Bridges/Lumen-Bridging-Header.h";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		16932A0D91F6D85B9C2F2B98 /* Build configuration list for PBXNativeTarget "LumenTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				04898E15276F7A2ED0E62FEF /* Debug */,
+				46655180DD0530FA8E9360D9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1B1DA35D7489FDDE3E5094CF /* Build configuration list for PBXNativeTarget "Lumen" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				495B8F62CC5EA7D99DAD8F2D /* Debug */,
+				DB69D605D392822F88A42FB2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CAE5F36F192090F76737D08C /* Build configuration list for PBXProject "Lumen" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA076C7BC7C6C45F1BB03F03 /* Debug */,
+				2D2F99B6443D2E21D64FD94E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B6B7785E344ACFF4DA083092 /* Project object */;
+}

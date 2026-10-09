@@ -1,0 +1,86 @@
+name: Lumen
+options:
+  bundleIdPrefix: org.hopejc
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    CLANG_CXX_LANGUAGE_STANDARD: "c++17"
+targets:
+  Lumen:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/App
+      - Sources/Core
+      - Sources/UI
+      - Sources/Bridges
+    info:
+      path: Sources/App/Info.plist
+      properties:
+        CFBundleDisplayName: Lumen
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.video
+        NSHumanReadableCopyright: "Hope Church"
+        NSMicrophoneUsageDescription: Lumen listens to the worship leader or pastor to follow lyrics and detect scripture references.
+        NSSpeechRecognitionUsageDescription: Lumen transcribes audio on this Mac to follow lyrics and detect scripture references.
+        NSCameraUsageDescription: Lumen uses capture devices (Apple TV, cameras, DeckLink inputs) as live video sources.
+        NSAppleEventsUsageDescription: Lumen asks Keynote to export PowerPoint and Keynote files as slide images.
+        NSCalendarsFullAccessUsageDescription: Lumen reads calendar events to trigger slides and macros at scheduled times.
+        NSLocalNetworkUsageDescription: Lumen serves a remote control and stage display to phones and tablets on your network, and discovers NDI sources.
+        NSBonjourServices: [_ndi._tcp]
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoadsInWebContent: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Presentation
+            CFBundleTypeRole: Viewer
+            LSItemContentTypes: [com.apple.keynote.key, org.openxmlformats.presentationml.presentation, com.adobe.pdf, public.image, public.movie, public.plain-text]
+    entitlements:
+      path: Sources/App/Lumen.entitlements
+      properties:
+        com.apple.security.device.audio-input: true
+        com.apple.security.device.camera: true
+        com.apple.security.automation.apple-events: true
+        com.apple.security.personal-information.calendars: true
+        com.apple.security.cs.disable-library-validation: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.hopejc.Lumen
+        PRODUCT_NAME: Lumen
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ENABLE_HARDENED_RUNTIME: YES
+        SWIFT_OBJC_BRIDGING_HEADER: Sources/Bridges/Lumen-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/Vendor/DeckLinkSDK/Mac/include"
+          - "$(SRCROOT)/Vendor/NDISDK/include"
+          - "\"/Library/NDI SDK for Apple/include\""
+        GCC_PREPROCESSOR_DEFINITIONS: ["$(inherited)"]
+        OTHER_LDFLAGS: ["-framework", "CoreFoundation"]
+  LumenTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests
+    dependencies:
+      - target: Lumen
+    settings:
+      base:
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Lumen.app/Contents/MacOS/Lumen"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Lumen:
+    build:
+      targets:
+        Lumen: all
+        LumenTests: [test]
+    test:
+      targets: [LumenTests]
