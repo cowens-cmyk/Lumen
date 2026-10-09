@@ -82,6 +82,8 @@ struct MediaRef: Codable, Hashable, Identifiable {
     var volume: Double = 1
     var scale: ScaleMode = .fill
     var color: RGBA? = nil
+    /// What to do when a (non-looping) video reaches its end, e.g. [.nextSlide] after a countdown.
+    var onEnd: [SlideAction]? = nil
 
     var url: URL? {
         switch kind {

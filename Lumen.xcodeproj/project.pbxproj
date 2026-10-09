@@ -55,6 +55,7 @@
 		CA7098B8DB95CFDF50E8FFC0 /* Importer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FAF0D7853563DEB1601EF4 /* Importer.swift */; };
 		CC0590011476D2A0AEB8C107 /* TimerRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD5E41ED42F717D0FE8D18B /* TimerRuntime.swift */; };
 		CFB3F08B4416B6B59578E58A /* ShowPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D4875F3D41B3F5E0E8F7FD /* ShowPanels.swift */; };
+		CFE8010DDB44A862F6AC6449 /* MediaEndPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E23515BAA73C160816FE0C2 /* MediaEndPicker.swift */; };
 		D4732FA5F397170C6E4AE7C5 /* BibleReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF063365AC269E37FF5B421 /* BibleReference.swift */; };
 		D64145C379C49D0A35DE581C /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2F72A8716D1BC0A0334763 /* SeedData.swift */; };
 		DD9664C9E3B5678D1560CA9A /* ChordChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CA72C58F30115729EA86872 /* ChordChart.swift */; };
@@ -110,6 +111,7 @@
 		54296DA840CAE28E08BA9B2F /* CaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureManager.swift; sourceTree = "<group>"; };
 		5473ECA31F33D0FBEE4B3991 /* MediaPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPanel.swift; sourceTree = "<group>"; };
 		58733FC4F4B261E110984BA2 /* ScriptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureService.swift; sourceTree = "<group>"; };
+		5E23515BAA73C160816FE0C2 /* MediaEndPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaEndPicker.swift; sourceTree = "<group>"; };
 		5FD1FD62382F4A8886188F20 /* OutputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputManager.swift; sourceTree = "<group>"; };
 		62A26C26891DD674F2434716 /* StageCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageCanvas.swift; sourceTree = "<group>"; };
 		683C461E03431A7EBD9F9C6F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -427,6 +429,7 @@
 				46566F45EBFC92B389CCD626 /* ActionListEditor.swift */,
 				894A56D11F0E29E7B1D2ACCC /* BackgroundPicker.swift */,
 				3AFA21F2FF47B8B3D1348D87 /* ChordEditor.swift */,
+				5E23515BAA73C160816FE0C2 /* MediaEndPicker.swift */,
 				687315DB262F0F413350B565 /* PresentationEditor.swift */,
 				450980EAE2351DF3A4F969DF /* ThemeEditor.swift */,
 			);
@@ -584,6 +587,7 @@
 				007939493ECDC524199C36A3 /* LyricFollower.swift in Sources */,
 				5C2B228EEB37D8101F09E30F /* LyricParser.swift in Sources */,
 				0F8B336FCC17A312455AA62D /* MIDIManager.swift in Sources */,
+				CFE8010DDB44A862F6AC6449 /* MediaEndPicker.swift in Sources */,
 				39898430737DF5118AE7E692 /* MediaEngine.swift in Sources */,
 				5A5D48752498C408F69674D0 /* MediaPanel.swift in Sources */,
 				552E92204B65351EAF6CC1A8 /* Models.swift in Sources */,

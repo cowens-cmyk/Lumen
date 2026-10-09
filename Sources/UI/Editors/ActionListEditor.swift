@@ -109,6 +109,11 @@ struct ActionRow: View {
             if m.kind != .programChange && m.kind != .noteOff {
                 Stepper("v \(m.value)", value: Binding(get: { m.value }, set: { var x = m; x.value = $0; action = .sendMIDI(x) }), in: 0...127).fixedSize()
             }
+        case .playMedia(let m):
+            Text("Play \(m.displayName)")
+            if m.kind == .video {
+                MediaEndPicker(media: Binding(get: { m }, set: { action = .playMedia($0) }), allowCustom: false).labelsHidden().fixedSize()
+            }
         case .showMessage(let s):
             Text("Message")
             TextField("text", text: Binding(get: { s }, set: { action = .showMessage($0) }))

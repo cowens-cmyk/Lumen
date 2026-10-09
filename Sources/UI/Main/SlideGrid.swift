@@ -109,6 +109,17 @@ struct SlideThumb: View {
                     Image(systemName: m.kind == .video ? "film" : m.kind == .audio ? "speaker.wave.2" : "dot.radiowaves.left.and.right")
                         .padding(5).background(.black.opacity(0.6), in: Circle()).foregroundStyle(.white).padding(6)
                 }
+                if let m = ref.slide.media, m.kind == .video {
+                    let choice = MediaEndChoice.of(m)
+                    if choice != .stay {
+                        Label(choice == .loop ? "Loop" : choice == .next ? "Then next" : choice == .clear ? "Then clear" : "Then actions",
+                              systemImage: choice == .loop ? "repeat" : "forward.end.fill")
+                            .font(.system(size: 9, weight: .bold)).labelStyle(.titleAndIcon)
+                            .padding(.horizontal, 5).padding(.vertical, 2)
+                            .background(.black.opacity(0.65), in: Capsule()).foregroundStyle(.white)
+                            .padding(6).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    }
+                }
                 if !ref.slide.actions.isEmpty {
                     Image(systemName: "bolt.fill").font(.caption).padding(5)
                         .background(.yellow, in: Circle()).foregroundStyle(.black).padding(6)
@@ -130,5 +141,20 @@ struct SlideThumb: View {
             }
         }
         .contentShape(Rectangle())
+        .contextMenu {
+            if let m = ref.slide.media, m.kind == .video {
+                Section("When this video ends") {
+                    ForEach(MediaEndChoice.allCases.filter { $0 != .custom }) { c in
+                        Button {
+                            app.store.updateSlide(in: presentation.id, slideID: ref.slide.id) { s in
+                                if var media = s.media { c.apply(to: &media); s.media = media }
+                            }
+                        } label: {
+                            Label(c.title, systemImage: MediaEndChoice.of(m) == c ? "checkmark" : "")
+                        }
+                    }
+                }
+            }
+        }
     }
 }

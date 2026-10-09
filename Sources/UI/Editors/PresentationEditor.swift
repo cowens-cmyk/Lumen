@@ -213,11 +213,17 @@ struct SlideDetail: View {
                         Picker("", selection: Binding(get: { m.scale }, set: { slide.media?.scale = $0 })) {
                             Text("Fill").tag(ScaleMode.fill); Text("Fit").tag(ScaleMode.fit); Text("Stretch").tag(ScaleMode.stretch)
                         }.labelsHidden().fixedSize()
-                        Toggle("Loop", isOn: Binding(get: { m.loop }, set: { slide.media?.loop = $0 }))
                         Button("Remove") { slide.media = nil }
                     }
                     Spacer()
                     Button("Choose…") { chooseMedia() }
+                }
+                if let m = slide.media, m.kind == .video {
+                    MediaEndPicker(media: Binding(get: { slide.media ?? m }, set: { slide.media = $0 }))
+                    if MediaEndChoice.of(m) == .custom {
+                        ActionListEditor(actions: Binding(get: { slide.media?.onEnd ?? [] }, set: { slide.media?.onEnd = $0 }))
+                            .frame(height: 160)
+                    }
                 }
                 Toggle("Enabled", isOn: $slide.enabled)
                 ActionListEditor(actions: $slide.actions).frame(height: 200)

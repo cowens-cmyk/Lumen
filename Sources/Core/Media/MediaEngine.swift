@@ -11,6 +11,8 @@ final class MediaEngine {
     private(set) var isPlaying = false
     private(set) var position: Double = 0
     private(set) var duration: Double = 0
+    /// Called when a non-looping video reaches its end by itself (not when it's stopped or replaced).
+    @ObservationIgnored var onFinished: ((MediaRef) -> Void)?
 
     @ObservationIgnored private let player = AVPlayer()
     @ObservationIgnored private let audioPlayer = AVPlayer()
@@ -79,6 +81,7 @@ final class MediaEngine {
         player.volume = Float(m.volume)
         current = m
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
+        let finished = m
         endObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification,
                                                              object: item, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -88,6 +91,7 @@ final class MediaEngine {
                     self.player.play()
                 } else {
                     self.isPlaying = false
+                    self.onFinished?(finished)
                 }
             }
         }

@@ -111,6 +111,18 @@ final class LibraryStore {
         }
     }
 
+    /// Edits one slide in place (used for quick changes from the slide grid).
+    func updateSlide(in presentationID: UUID, slideID: UUID, _ edit: (inout Slide) -> Void) {
+        guard let pi = data.presentations.firstIndex(where: { $0.id == presentationID }) else { return }
+        for gi in data.presentations[pi].groups.indices {
+            if let si = data.presentations[pi].groups[gi].slides.firstIndex(where: { $0.id == slideID }) {
+                edit(&data.presentations[pi].groups[gi].slides[si])
+                data.presentations[pi].updatedAt = Date()
+                return
+            }
+        }
+    }
+
     // MARK: Lookups
 
     var defaultMediaScale: ScaleMode { data.settings.defaultMediaScale ?? .fit }

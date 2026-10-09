@@ -16,6 +16,9 @@ final class LiveEngine {
     // Layers
     private(set) var lookID: UUID?
     private(set) var mediaLayer: MediaRef?
+    /// The slide whose own video is on the media layer. That video belongs to the slide: it's cleared when a different
+    /// slide goes live, and its end-of-video actions only run while that slide is still the live one.
+    private(set) var mediaOwnerSlideID: UUID?
     private(set) var activeProps: [UUID: Date] = [:]
     private(set) var message: String?
     private(set) var stageMessage: String?
@@ -31,7 +34,9 @@ final class LiveEngine {
     /// Bumped on any change the renderers care about.
     private(set) var revision = 0
 
-    @ObservationIgnored var media: MediaEngine!
+    @ObservationIgnored var media: MediaEngine! {
+        didSet { media.onFinished = { [weak self] ref in self?.mediaFinished(ref) } }
+    }
     @ObservationIgnored var capture: CaptureManager!
     @ObservationIgnored var browser: BrowserController!
     @ObservationIgnored var ndiIn: NDIReceiveManager!
@@ -122,6 +127,7 @@ final class LiveEngine {
     func trigger(_ presentation: Presentation, index: Int, playlistID: UUID? = nil) {
         if store.presentation(presentation.id) == nil { transient[presentation.id] = presentation }
         let slides = presentation.orderedSlides
+        let sameSlide = livePresentationID == presentation.id && liveIndex == index && !slideCleared
         guard slides.indices.contains(index) else {
             // Media-only presentations without slides still play their media.
             if slides.isEmpty, let m = presentation.groups.first?.slides.first?.media { playMedia(m) }
@@ -133,8 +139,13 @@ final class LiveEngine {
         slideCleared = false
         let slide = slides[index].slide
         if let m = slide.media {
-            // Per-slide media replaces the media layer only if it's different, so looping backgrounds don't restart.
-            if mediaLayer?.location != m.location { playMedia(m) }
+            // Media that's already up isn't restarted when the next slide shares it (looping backgrounds keep going),
+            // but clicking the same slide again, or a video that has already finished, plays it again.
+            let finished = m.kind == .video && !m.loop && !media.isPlaying
+            if sameSlide || finished || mediaLayer?.location != m.location { playMedia(m, owner: slide.id) }
+            else { mediaOwnerSlideID = slide.id }
+        } else if mediaOwnerSlideID != nil, mediaOwnerSlideID != slide.id, mediaLayer?.kind == .video, mediaLayer?.loop == false {
+            clear(.media)   // the clip belonged to the slide we just left
         }
         syncBackground()
         changed()
@@ -195,9 +206,20 @@ final class LiveEngine {
         media.setBackground(backgroundRef(for: p))
     }
 
+    // MARK: - When a video ends
+
+    /// A video finished playing on its own: run its end actions (e.g. go to the next slide after a countdown).
+    private func mediaFinished(_ ref: MediaRef) {
+        guard mediaLayer?.id == ref.id, let actions = ref.onEnd, !actions.isEmpty else { return }
+        // If the operator already moved on from the slide that started this video, don't skip anything.
+        if let owner = mediaOwnerSlideID, slideCleared || currentSlide?.slide.id != owner { return }
+        Task { await perform(actions) }
+    }
+
     // MARK: - Layers
 
-    func playMedia(_ m: MediaRef) {
+    func playMedia(_ m: MediaRef, owner: UUID? = nil) {
+        mediaOwnerSlideID = owner
         switch m.kind {
         case .video, .audio: media.play(m)
         case .capture: capture.start(deviceID: m.location)
@@ -218,6 +240,7 @@ final class LiveEngine {
             slideCleared = true
             syncBackground()
         case .media:
+            mediaOwnerSlideID = nil
             if let m = mediaLayer {
                 switch m.kind {
                 case .video: media.stop()

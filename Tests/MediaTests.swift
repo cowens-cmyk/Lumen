@@ -168,3 +168,123 @@ final class BackgroundLoopTests: XCTestCase {
         XCTAssertNil(engine.media.backgroundLocation, "loop stops with the slide")
     }
 }
+
+@MainActor
+final class VideoEndTests: XCTestCase {
+    private func makeEngine() throws -> (LiveEngine, LibraryStore) {
+        let store = LibraryStore(folder: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+        let engine = LiveEngine(store: store)
+        engine.media = MediaEngine()
+        engine.capture = CaptureManager(); engine.browser = BrowserController()
+        engine.ndiIn = NDIReceiveManager(); engine.midi = MIDIManager()
+        return (engine, store)
+    }
+
+    private func clip(seconds: Double = 1) throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("clip-\(UUID().uuidString).mov")
+        try makeVideo(at: url, seconds: seconds)
+        return url
+    }
+
+    private func videoSlide(_ url: URL, loop: Bool = false, onEnd: [SlideAction]? = nil) -> Slide {
+        Slide(media: MediaRef(kind: .video, location: url.path, loop: loop, scale: .fit, onEnd: onEnd))
+    }
+
+    private func presentation(_ name: String, slides: [Slide]) -> Presentation {
+        var p = Presentation(name: name, kind: .media)
+        p.groups = [SlideGroup(name: "Slides", color: .black, slides: slides)]
+        return p
+    }
+
+    /// The countdown scenario: the video ends, the first worship slide comes up by itself, and the video is gone.
+    func testCountdownGoesToNextSlideAndClearsTheVideo() async throws {
+        let (engine, store) = try makeEngine()
+        let p = presentation("Service", slides: [videoSlide(try clip(), onEnd: [.nextSlide]), Slide(text: "Welcome to church")])
+        store.upsert(p)
+        engine.trigger(p, index: 0)
+        XCTAssertEqual(engine.liveIndex, 0)
+        XCTAssertNotNil(engine.mediaLayer)
+        try await Task.sleep(for: .seconds(2.5))
+        XCTAssertEqual(engine.liveIndex, 1, "advanced when the video finished")
+        XCTAssertNil(engine.mediaLayer, "the finished countdown must not stay behind the next slide")
+        XCTAssertEqual(engine.currentSlide?.slide.text, "Welcome to church")
+    }
+
+    /// Countdown video presentation first in the playlist → the first song's first slide.
+    func testEndOfVideoCrossesIntoTheNextPlaylistItem() async throws {
+        let (engine, store) = try makeEngine()
+        let countdown = presentation("Countdown", slides: [videoSlide(try clip(), onEnd: [.nextSlide])])
+        let song = LyricParser.presentation(name: "First Song", text: "[Verse 1]\nAmazing grace\nHow sweet the sound", maxLines: 2)
+        store.upsert(countdown); store.upsert(song)
+        let playlist = Playlist(name: "Sunday", items: [PlaylistItem(kind: .presentation(countdown.id)), PlaylistItem(kind: .presentation(song.id))])
+        store.upsert(playlist)
+        engine.trigger(countdown, index: 0, playlistID: playlist.id)
+        try await Task.sleep(for: .seconds(2.5))
+        XCTAssertEqual(engine.livePresentationID, song.id)
+        XCTAssertEqual(engine.liveIndex, 0)
+        XCTAssertNil(engine.mediaLayer)
+    }
+
+    /// If the operator already moved on, the finishing video must not skip another slide.
+    func testNoExtraAdvanceWhenOperatorAlreadyMovedOn() async throws {
+        let (engine, store) = try makeEngine()
+        let p = presentation("Service", slides: [videoSlide(try clip(), onEnd: [.nextSlide]), Slide(text: "One"), Slide(text: "Two")])
+        store.upsert(p)
+        engine.trigger(p, index: 0)
+        engine.trigger(p, index: 1)                    // operator clicks ahead while the video is still playing
+        try await Task.sleep(for: .seconds(2.5))
+        XCTAssertEqual(engine.liveIndex, 1, "must stay on slide 2, not jump to 3")
+        XCTAssertNil(engine.mediaLayer, "leaving the slide cleared its video")
+    }
+
+    func testLoopingVideoNeverAdvances() async throws {
+        let (engine, store) = try makeEngine()
+        let p = presentation("Loop", slides: [videoSlide(try clip(), loop: true, onEnd: [.nextSlide]), Slide(text: "Next")])
+        store.upsert(p)
+        engine.trigger(p, index: 0)
+        try await Task.sleep(for: .seconds(2.5))
+        XCTAssertEqual(engine.liveIndex, 0)
+        XCTAssertNotNil(engine.mediaLayer)
+    }
+
+    func testPlainVideoStaysOnLastFrameByDefault() async throws {
+        let (engine, store) = try makeEngine()
+        let p = presentation("Clip", slides: [videoSlide(try clip()), Slide(text: "Next")])
+        store.upsert(p)
+        engine.trigger(p, index: 0)
+        try await Task.sleep(for: .seconds(2.5))
+        XCTAssertEqual(engine.liveIndex, 0)
+        XCTAssertNotNil(engine.mediaLayer, "no end action: the last frame stays up")
+    }
+
+    func testClickingTheVideoSlideAgainReplaysIt() async throws {
+        let (engine, store) = try makeEngine()
+        let p = presentation("Clip", slides: [videoSlide(try clip(), onEnd: [.clear(.all)])])
+        store.upsert(p)
+        engine.trigger(p, index: 0)
+        try await Task.sleep(for: .seconds(2.5))
+        XCTAssertNil(engine.mediaLayer, "clear-on-end ran")
+        engine.trigger(p, index: 0)                    // run it again
+        XCTAssertNotNil(engine.mediaLayer)
+        XCTAssertTrue(engine.media.isPlaying)
+    }
+
+    func testMacroPlayMediaCanAlsoChainOnEnd() async throws {
+        let (engine, store) = try makeEngine()
+        let p = presentation("Next", slides: [Slide(text: "After the video")])
+        store.upsert(p)
+        let ref = MediaRef(kind: .video, location: try clip().path, loop: false, onEnd: [.triggerPresentation(p.id, slide: 0)])
+        await engine.perform([.playMedia(ref)])
+        try await Task.sleep(for: .seconds(2.5))
+        XCTAssertEqual(engine.livePresentationID, p.id)
+    }
+
+    func testChoiceMapping() {
+        var m = MediaRef(kind: .video, location: "/x.mov", loop: false)
+        XCTAssertEqual(MediaEndChoice.of(m), .stay)
+        MediaEndChoice.next.apply(to: &m); XCTAssertEqual(MediaEndChoice.of(m), .next); XCTAssertFalse(m.loop)
+        MediaEndChoice.loop.apply(to: &m); XCTAssertEqual(MediaEndChoice.of(m), .loop); XCTAssertNil(m.onEnd)
+        MediaEndChoice.clear.apply(to: &m); XCTAssertEqual(MediaEndChoice.of(m), .clear)
+        m.onEnd = [.showMessage("hi")]; XCTAssertEqual(MediaEndChoice.of(m), .custom)
+    }
+}
