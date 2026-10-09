@@ -31,6 +31,8 @@ struct AppSettings: Codable, Hashable {
     var defaultThemeByKind: [PresentationKind: UUID] = [:]
     var defaultLookID: UUID? = nil
     var transitionSeconds: Double = 0.35
+    /// How images/videos that aren't screen-shaped are placed. Nil = fit (scaled to the edges, black elsewhere).
+    var defaultMediaScale: ScaleMode? = nil
 
     // Remote control
     var remoteEnabled = true

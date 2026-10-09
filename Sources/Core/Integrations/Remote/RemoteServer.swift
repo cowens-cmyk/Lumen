@@ -1,5 +1,7 @@
+import CoreImage
 import Foundation
 import Network
+import AppKit
 import Observation
 
 /// Tiny HTTP server for the phone/tablet remote and the browser-based stage display.
@@ -90,6 +92,14 @@ final class RemoteServer {
             return .html(RemotePages.remote)
         case ("GET", "/stage"):
             return .html(RemotePages.stage)
+        case ("GET", "/api/frame"):
+            // PNG of what a screen is showing right now: ?screen=audience|stream|stage (&w=960 to shrink).
+            guard authorized(req) else { return .json(["error": "pin"], status: 401) }
+            let role = ScreenRole(rawValue: req.query["screen"] ?? "audience") ?? .audience
+            guard let screen = app.store.data.screens.first(where: { $0.role == role }),
+                  let buffer = app.outputs.renderers[screen.id]?.latestFrame,
+                  let png = RemoteAPI.png(buffer, width: Int(req.query["w"] ?? "") ?? 960) else { return .text("No frame", status: 404) }
+            return HTTPResponse(status: 200, contentType: "image/png", body: png)
         case ("GET", "/api/stage"):
             return .json(RemoteAPI.stage(app))
         case ("GET", "/api/state"):
@@ -184,6 +194,14 @@ struct HTTPResponse {
 
 @MainActor
 enum RemoteAPI {
+    static func png(_ buffer: CVPixelBuffer, width: Int) -> Data? {
+        var image = CIImage(cvPixelBuffer: buffer)
+        let scale = CGFloat(max(64, min(width, 3840))) / image.extent.width
+        if scale < 1 { image = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale)) }
+        guard let cg = ScreenRenderer.sharedContext.createCGImage(image, from: image.extent) else { return nil }
+        return NSBitmapImageRep(cgImage: cg).representation(using: .png, properties: [:])
+    }
+
     static func slideJSON(_ s: SlideRef) -> [String: Any] {
         ["text": s.slide.text, "group": s.groupName, "color": s.groupColor.hex, "label": s.slide.label]
     }

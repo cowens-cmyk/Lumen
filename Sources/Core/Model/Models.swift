@@ -165,6 +165,8 @@ struct Presentation: Identifiable, Codable, Hashable {
     var pcoSongID: String? = nil
     var pcoArrangementID: String? = nil
     var pcoUpdatedAt: String? = nil
+    /// Image or looping video behind this presentation's words (overrides the theme's background).
+    var background: MediaRef? = nil
     /// When true, Planning Center sync never overwrites local lyric edits.
     var lockedFromSync = false
     /// Song key for Nashville numbers, e.g. "G", "Bb", "Em". Nil = unknown (stage shows letters).

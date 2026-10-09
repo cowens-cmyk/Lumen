@@ -224,16 +224,17 @@ struct SlidePreview: View {
     var theme: Theme
     var mode: RenderMode = .fullSlide
     var media: MediaRef? = nil
+    /// The song's own background, if it has one (a slide's own media wins, then this, then the theme's).
+    var background: MediaRef? = nil
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 if mode == .fullSlide {
                     theme.background.color
-                    if let m = media ?? theme.backgroundMedia, m.kind == .image, let img = ThumbnailCache.shared.image(m.location) {
-                        Image(nsImage: img).resizable().aspectRatio(contentMode: m.scale == .fit ? .fit : .fill)
-                    } else if let m = media ?? theme.backgroundMedia, m.kind == .color, let c = m.color {
-                        c.color
+                    if let m = media ?? background ?? theme.backgroundMedia {
+                        if m.kind == .color, let c = m.color { c.color }
+                        else { BackdropThumb(media: m) }   // fit shows black bars, like the real output
                     }
                 } else {
                     Checkerboard()

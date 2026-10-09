@@ -33,18 +33,9 @@ struct ThemeEditor: View {
                 }
                 Section("Background") {
                     ColorPicker("Color", selection: ColorBinding.make($theme.background))
-                    HStack {
-                        Text(theme.backgroundMedia?.displayName ?? "No image/video")
-                        Spacer()
-                        Button("Choose…") {
-                            let panel = NSOpenPanel()
-                            panel.allowedContentTypes = [.image]
-                            if panel.runModal() == .OK, let u = panel.url {
-                                theme.backgroundMedia = MediaRef(kind: .image, location: app.store.importMedia(u).path)
-                            }
-                        }
-                        if theme.backgroundMedia != nil { Button("Remove") { theme.backgroundMedia = nil } }
-                    }
+                    BackgroundPicker(media: $theme.backgroundMedia)
+                    Text("A video loops seamlessly behind the words and keeps running between slides. A song can have its own background in its Info tab.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Reference label (scripture)") {
                     Toggle("Show label", isOn: $theme.showLabel)

@@ -113,6 +113,8 @@ final class LibraryStore {
 
     // MARK: Lookups
 
+    var defaultMediaScale: ScaleMode { data.settings.defaultMediaScale ?? .fit }
+
     func presentation(_ id: UUID?) -> Presentation? {
         guard let id else { return nil }
         return data.presentations.first { $0.id == id }

@@ -48,6 +48,7 @@ final class ScreenRenderer: @unchecked Sendable {
     private var sinks: [FrameSink] = []
     private var poolAuxAttributes: CFDictionary?
     private var previewPending = false
+    private var latest: CVPixelBuffer?
     private let previews = NSHashTable<FrameDisplayView>.weakObjects()
 
     static let sharedContext: CIContext = {
@@ -101,6 +102,12 @@ final class ScreenRenderer: @unchecked Sendable {
         lock.lock(); previews.add(view); lock.unlock()
     }
 
+    /// The most recent composited frame (BGRA), if any.
+    var latestFrame: CVPixelBuffer? {
+        lock.lock(); defer { lock.unlock() }
+        return latest
+    }
+
     func update(_ new: ScreenScene) {
         lock.lock()
         if new.slideKey != scene.slideKey {
@@ -134,12 +141,29 @@ final class ScreenRenderer: @unchecked Sendable {
         return moved.cropped(to: rect)
     }
 
-    private func image(for bg: SceneBackground) -> CIImage? {
+    /// A picture that doesn't match the screen's shape is scaled until it touches the edges, and the rest is solid
+    /// black — never the theme color or whatever is underneath. Bars are only added to opaque outputs; a keyed
+    /// (transparent) output keeps the margins transparent so the camera shows through.
+    private func withBars(_ placed: CIImage, mode: ScaleMode, opaque: Bool) -> CIImage {
+        guard mode == .fit, opaque else { return placed }
+        let r = placed.extent
+        guard r.width.isFinite, r.width < size.width - 0.5 || r.height < size.height - 0.5 else { return placed }
+        let black = CIImage(color: .black)
+        var out = placed
+        let bars = [CGRect(x: 0, y: 0, width: r.minX, height: size.height),
+                    CGRect(x: r.maxX, y: 0, width: size.width - r.maxX, height: size.height),
+                    CGRect(x: r.minX, y: 0, width: r.width, height: r.minY),
+                    CGRect(x: r.minX, y: r.maxY, width: r.width, height: size.height - r.maxY)]
+        for bar in bars where bar.width > 0.5 && bar.height > 0.5 { out = black.cropped(to: bar).composited(over: out) }
+        return out
+    }
+
+    private func image(for bg: SceneBackground, opaque: Bool) -> CIImage? {
         switch bg {
         case .none: return nil
         case .color(let c): return CIImage(color: CIColor(cgColor: c.cgColor)).cropped(to: rect)
-        case .image(let img, let mode): return place(img, mode)
-        case .live(let key, let mode): return LiveFrames.shared.get(key).map { place($0, mode) }
+        case .image(let img, let mode): return withBars(place(img, mode), mode: mode, opaque: opaque)
+        case .live(let key, let mode): return LiveFrames.shared.get(key).map { withBars(place($0, mode), mode: mode, opaque: opaque) }
         }
     }
 
@@ -159,8 +183,8 @@ final class ScreenRenderer: @unchecked Sendable {
         lock.unlock()
 
         var out = s.opaque ? CIImage(color: .black).cropped(to: rect) : CIImage(color: .clear).cropped(to: rect)
-        if let bg = image(for: s.themeBackground) { out = bg.composited(over: out) }
-        if let m = image(for: s.media) { out = m.composited(over: out) }
+        if let bg = image(for: s.themeBackground, opaque: s.opaque) { out = bg.composited(over: out) }
+        if let m = image(for: s.media, opaque: s.opaque) { out = m.composited(over: out) }
 
         let progress = tDur > 0 ? min(1, (CACurrentMediaTime() - tStart) / tDur) : 1
         let cur = s.slide.map(fit)
@@ -183,6 +207,7 @@ final class ScreenRenderer: @unchecked Sendable {
         guard let buffer = pb else { return }
         ciContext.render(out, to: buffer, bounds: rect, colorSpace: CGColorSpace(name: CGColorSpace.sRGB))
 
+        lock.lock(); latest = buffer; lock.unlock()
         for sink in currentSinks { sink.send(buffer) }
         if !views.isEmpty {
             lock.lock()

@@ -73,7 +73,7 @@ struct Importer {
         var p = Presentation(name: name ?? (urls.count == 1 ? urls[0].deletingPathExtension().lastPathComponent : "Images"), kind: .media)
         let slides = urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }.map { u in
             let local = store.importMedia(u)
-            return Slide(media: MediaRef(kind: .image, location: local.path, name: u.deletingPathExtension().lastPathComponent, scale: .fit))
+            return Slide(media: MediaRef(kind: .image, location: local.path, name: u.deletingPathExtension().lastPathComponent, scale: store.defaultMediaScale))
         }
         p.groups = [SlideGroup(name: "Slides", color: RGBA(hex: "#64748B"), slides: slides)]
         p.slideshow = SlideshowSettings(enabled: false, interval: 8, loop: true)
@@ -84,7 +84,7 @@ struct Importer {
         let local = store.importMedia(url)
         var p = Presentation(name: url.deletingPathExtension().lastPathComponent, kind: .media)
         p.groups = [SlideGroup(name: kind == .audio ? "Audio" : "Video", color: RGBA(hex: "#64748B"),
-                               slides: [Slide(media: MediaRef(kind: kind, location: local.path, loop: false))])]
+                               slides: [Slide(media: MediaRef(kind: kind, location: local.path, loop: false, scale: store.defaultMediaScale))])]
         return p
     }
 

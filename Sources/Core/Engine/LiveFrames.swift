@@ -7,6 +7,8 @@ final class LiveFrames: @unchecked Sendable {
     static let shared = LiveFrames()
 
     static let videoKey = "video"
+    /// Looping motion background behind the live slide (separate from the foreground video layer).
+    static let backgroundKey = "bgvideo"
     static let webKey = "web"
     static func captureKey(_ id: String) -> String { "capture:\(id)" }
     static func ndiKey(_ name: String) -> String { "ndi:\(name)" }

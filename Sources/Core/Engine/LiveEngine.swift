@@ -136,6 +136,7 @@ final class LiveEngine {
             // Per-slide media replaces the media layer only if it's different, so looping backgrounds don't restart.
             if mediaLayer?.location != m.location { playMedia(m) }
         }
+        syncBackground()
         changed()
         if !slide.actions.isEmpty { Task { await perform(slide.actions) } }
         if presentation.slideshow.enabled, slideshowInterval == nil { startSlideshow(interval: presentation.slideshow.interval) }
@@ -180,6 +181,20 @@ final class LiveEngine {
 
     private func nextPlaylistPresentation() -> Presentation? { adjacentPlaylistPresentation(offset: 1) }
 
+    // MARK: - Backgrounds
+
+    /// What sits behind the live slide's words: the song's own background, else its theme's.
+    func backgroundRef(for p: Presentation?, theme: Theme? = nil) -> MediaRef? {
+        p?.background ?? (theme ?? store.resolvedTheme(for: p)).backgroundMedia
+    }
+
+    /// Keeps the looping background player in step with the live slide. A loop belongs to the slide that's showing:
+    /// it stops when the slide is cleared, and keeps running (no restart) across slides that share it.
+    private func syncBackground() {
+        guard !slideCleared, let p = livePresentation else { media.setBackground(nil); return }
+        media.setBackground(backgroundRef(for: p))
+    }
+
     // MARK: - Layers
 
     func playMedia(_ m: MediaRef) {
@@ -201,6 +216,7 @@ final class LiveEngine {
             stopSlideshow()
         case .slide:
             slideCleared = true
+            syncBackground()
         case .media:
             if let m = mediaLayer {
                 switch m.kind {

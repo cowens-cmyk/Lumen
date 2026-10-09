@@ -160,6 +160,11 @@ struct PresentationEditor: View {
                 Text("Default for \(p.kind.title) (\(app.store.resolvedTheme(for: Presentation(name: "", kind: p.kind)).name))").tag(UUID?.none)
                 ForEach(app.store.data.themes) { t in Text(t.name).tag(Optional(t.id)) }
             }
+            Section("Background behind the words") {
+                BackgroundPicker(media: $p.background, emptyLabel: "Use the theme's background")
+                Text("Set a looping video or image once and every slide of this song uses it.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             TextField("Author", text: $p.author)
             TextField("Copyright", text: $p.copyright)
             TextField("CCLI Song #", text: $p.ccli)
@@ -228,7 +233,8 @@ struct SlideDetail: View {
         guard panel.runModal() == .OK, let u = panel.url else { return }
         let local = app.store.importMedia(u)
         let isImage = UTType(filenameExtension: u.pathExtension)?.conforms(to: .image) == true
-        slide.media = MediaRef(kind: isImage ? .image : .video, location: local.path)
+        slide.media = MediaRef(kind: isImage ? .image : .video, location: local.path,
+                               name: u.deletingPathExtension().lastPathComponent, scale: app.store.defaultMediaScale)
     }
 }
 

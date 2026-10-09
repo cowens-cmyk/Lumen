@@ -121,6 +121,13 @@ final class OutputManager {
         }
     }
 
+    /// A slide/theme background. Videos come from the dedicated loop player; until its first frame arrives
+    /// (or if it isn't the active loop) the theme color shows instead of a hole.
+    private func themeBackground(for m: MediaRef, fallback: RGBA) -> SceneBackground {
+        guard m.kind == .video else { return background(for: m) }
+        return engine.media.backgroundLocation == m.location ? .live(LiveFrames.backgroundKey, m.scale) : .color(fallback)
+    }
+
     func scene(for screen: Screen, size: CGSize) -> ScreenScene {
         var scene = ScreenScene()
         scene.transition = store.data.settings.transitionSeconds
@@ -143,7 +150,7 @@ final class OutputManager {
         scene.opaque = screen.role == .audience || mode == .fullSlide
 
         if cfg.layers.slide, mode == .fullSlide, current != nil {
-            if let bm = theme.backgroundMedia { scene.themeBackground = background(for: bm) }
+            if let bm = engine.backgroundRef(for: presentation, theme: theme) { scene.themeBackground = themeBackground(for: bm, fallback: theme.background) }
             else { scene.themeBackground = .color(theme.background) }
         }
 

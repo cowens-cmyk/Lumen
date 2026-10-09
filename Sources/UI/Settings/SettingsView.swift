@@ -713,6 +713,17 @@ struct GeneralSettings: View {
                     Text("Slide dissolve \(String(format: "%.2f", store.data.settings.transitionSeconds))s")
                 }
             }
+            Section {
+                Picker("Pictures that aren't screen-shaped", selection: Binding(
+                    get: { store.data.settings.defaultMediaScale ?? .fit },
+                    set: { store.data.settings.defaultMediaScale = $0 })) {
+                    Text("Fit — scale to the edges, black elsewhere").tag(ScaleMode.fit)
+                    Text("Fill — cover the screen, crop the rest").tag(ScaleMode.fill)
+                    Text("Stretch — distort to fill").tag(ScaleMode.stretch)
+                }
+            } header: { Text("Images & videos") } footer: {
+                Text("Applies to newly added images and videos. Each one can be changed in its own settings. Example: a 228×400 image on a 1920×1080 screen is scaled to the full height and centered on black.")
+            }
             Section("Listening") {
                 Picker("Language", selection: $store.data.settings.speechLocale) {
                     ForEach(["en-US", "en-GB", "en-AU", "es-US", "es-MX", "pt-BR", "fr-FR", "de-DE", "ko-KR"], id: \.self) { Text($0).tag($0) }

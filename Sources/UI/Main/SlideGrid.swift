@@ -104,7 +104,7 @@ struct SlideThumb: View {
         let theme = app.store.resolvedTheme(for: presentation, slide: ref.slide)
         VStack(alignment: .leading, spacing: 4) {
             ZStack(alignment: .bottomTrailing) {
-                SlidePreview(text: ref.slide.text, label: ref.slide.label, theme: theme, media: ref.slide.media)
+                SlidePreview(text: ref.slide.text, label: ref.slide.label, theme: theme, media: ref.slide.media, background: presentation.background)
                 if let m = ref.slide.media, m.kind != .image {
                     Image(systemName: m.kind == .video ? "film" : m.kind == .audio ? "speaker.wave.2" : "dot.radiowaves.left.and.right")
                         .padding(5).background(.black.opacity(0.6), in: Circle()).foregroundStyle(.white).padding(6)

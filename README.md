@@ -88,6 +88,13 @@ MultiTracks.com does not offer a public API for lyrics, so Lumen doesn't scrape 
 - **Planning Center** (recommended). Songs in your plans carry SongSelect-imported lyrics and the arrangement's sequence (V1, C, V2, C, B, C…). Lumen builds the slides from them and re-syncs when the arrangement changes. Your own edits are protected with "Keep my edits".
 - **Direct import** of SongSelect `.usr` or `.txt` downloads, OpenLyrics XML, or pasted text.
 
+## Videos, images and worship backgrounds
+
+- **Import:** the **+** menu in the sidebar takes images, videos, audio, PDFs, PowerPoint and Keynote. Several images become one presentation with slideshow timing. Videos play from the **Media** tab (with a scrub bar) or as a slide, and any macro or slide action can play a file.
+- **Looping backgrounds with words on top:** set a video (or image) once and the lyrics sit on it. Use **Setup → Themes → Background** for a whole style (all worship songs, say), or the song's **Info → Background behind the words** for one song. The loop is seamless, keeps running from slide to slide without restarting, and stops when the slide is cleared. It plays on its own player, so a video clip can still play full screen on top of it. Order of precedence: slide's own media, then the song's background, then the theme's.
+- **Pictures that aren't screen-shaped:** scaled until they touch the edges of the screen, centered on solid **black**, never the theme color. A 228×400 image on a 1920×1080 screen fills the full height with black on both sides. This is the default (**Setup → General → Images & videos**); each image or background can instead be set to *Fill* (crop to cover) or *Stretch*. On a keyed output (a transparent livestream layer) the margins stay transparent instead of black.
+- **See what each screen is showing:** `http://<mac-ip>:8090/api/frame?screen=audience` (or `stream`, `stage`) returns a PNG of the live output.
+
 ## Chord charts and Nashville numbers on the stage display
 
 - **Import:** select a song, then click **Chords** in the slide grid header (or right-click it in the Library → *Chords & Nashville Numbers…*). Then **Import Chord Chart…**. It accepts:

@@ -22,6 +22,7 @@
 		42A59EC411038CBF5C139A72 /* library-0.2.0.json in Resources */ = {isa = PBXBuildFile; fileRef = 057AB1E930A6172D550E62C4 /* library-0.2.0.json */; };
 		43FE731B44957A48C09B3DE4 /* StageCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62A26C26891DD674F2434716 /* StageCanvas.swift */; };
 		47BF4E7B34930971CF0B9D95 /* LMDeckLink.mm in Sources */ = {isa = PBXBuildFile; fileRef = 470D9DAA1C72E244BA569699 /* LMDeckLink.mm */; };
+		4DFEA1743B5ABDCD3D0F7583 /* MediaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CBDEF6F54B2AA03104CCCBB /* MediaTests.swift */; };
 		5361D97E8BB09178532D2CD3 /* LumenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3531FE66E808C5BF721C5245 /* LumenTests.swift */; };
 		552E92204B65351EAF6CC1A8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 683C461E03431A7EBD9F9C6F /* Models.swift */; };
 		5A5D48752498C408F69674D0 /* MediaPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5473ECA31F33D0FBEE4B3991 /* MediaPanel.swift */; };
@@ -41,6 +42,7 @@
 		94E02BFE9B3CF91EE0385536 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041E10D972E1F269AF9C88A6 /* SettingsView.swift */; };
 		96D45EF09AE6E9728F9308CB /* RemotePages.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A3FA73A6C168D62DD54BAF /* RemotePages.swift */; };
 		9BAAED2839CD4843DB7A8DA1 /* CaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54296DA840CAE28E08BA9B2F /* CaptureManager.swift */; };
+		A16EA867AA7919D73873330D /* BackgroundPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 894A56D11F0E29E7B1D2ACCC /* BackgroundPicker.swift */; };
 		A7156BF7ACB5ADE1F9FC95E4 /* ChordMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D27083B701E43EC3B33BF15F /* ChordMatcher.swift */; };
 		A7E7DFFB1E8DE9DD0FAE0318 /* VolunteerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC19D78C46BA6CF09E29A9A9 /* VolunteerView.swift */; };
 		A8BD27BFA409A8CA8F21BC22 /* Common.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8000FF3A30A85C0CA339C3 /* Common.swift */; };
@@ -103,6 +105,7 @@
 		470D9DAA1C72E244BA569699 /* LMDeckLink.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMDeckLink.mm; sourceTree = "<group>"; };
 		49957E313B75D9694754A9FB /* LyricFollower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricFollower.swift; sourceTree = "<group>"; };
 		4C8000FF3A30A85C0CA339C3 /* Common.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Common.swift; sourceTree = "<group>"; };
+		4CBDEF6F54B2AA03104CCCBB /* MediaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaTests.swift; sourceTree = "<group>"; };
 		522D5FF9DBAD9A4A4C0721C5 /* PlanningCenterSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningCenterSync.swift; sourceTree = "<group>"; };
 		54296DA840CAE28E08BA9B2F /* CaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureManager.swift; sourceTree = "<group>"; };
 		5473ECA31F33D0FBEE4B3991 /* MediaPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPanel.swift; sourceTree = "<group>"; };
@@ -119,6 +122,7 @@
 		81309530E47B5A000C22F1F2 /* LMDeckLink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMDeckLink.h; sourceTree = "<group>"; };
 		84CA4FCC1FF37F12F092CAF5 /* ListenPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenPanel.swift; sourceTree = "<group>"; };
 		87EF32918A0E39FA3B5E2525 /* LumenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenApp.swift; sourceTree = "<group>"; };
+		894A56D11F0E29E7B1D2ACCC /* BackgroundPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundPicker.swift; sourceTree = "<group>"; };
 		92687044A1286889831F2FBF /* MIDIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIManager.swift; sourceTree = "<group>"; };
 		954CEE9D11F354DB4E7D9D99 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
 		98BC8F33EA2E0C3644375D88 /* Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sidebar.swift; sourceTree = "<group>"; };
@@ -375,6 +379,7 @@
 			children = (
 				7F60025706F39AF051B6BF65 /* ChordTests.swift */,
 				3531FE66E808C5BF721C5245 /* LumenTests.swift */,
+				4CBDEF6F54B2AA03104CCCBB /* MediaTests.swift */,
 				0818F10A9E5FF2197AAB0576 /* Fixtures */,
 			);
 			path = Tests;
@@ -420,6 +425,7 @@
 			isa = PBXGroup;
 			children = (
 				46566F45EBFC92B389CCD626 /* ActionListEditor.swift */,
+				894A56D11F0E29E7B1D2ACCC /* BackgroundPicker.swift */,
 				3AFA21F2FF47B8B3D1348D87 /* ChordEditor.swift */,
 				687315DB262F0F413350B565 /* PresentationEditor.swift */,
 				450980EAE2351DF3A4F969DF /* ThemeEditor.swift */,
@@ -552,6 +558,7 @@
 			files = (
 				C4CC5C1118FD9BE7A48029B0 /* ActionListEditor.swift in Sources */,
 				E79655286757F68B9C01D388 /* AppModel.swift in Sources */,
+				A16EA867AA7919D73873330D /* BackgroundPicker.swift in Sources */,
 				ADA8C9A140CDBDA404315D52 /* BibleBooks.swift in Sources */,
 				60C3615133D692376E997D36 /* BibleProviders.swift in Sources */,
 				D4732FA5F397170C6E4AE7C5 /* BibleReference.swift in Sources */,
@@ -613,6 +620,7 @@
 			files = (
 				20A89CC3363CF3BBFB6C7B9C /* ChordTests.swift in Sources */,
 				5361D97E8BB09178532D2CD3 /* LumenTests.swift in Sources */,
+				4DFEA1743B5ABDCD3D0F7583 /* MediaTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
