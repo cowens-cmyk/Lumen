@@ -3,7 +3,8 @@ import SwiftUI
 struct ScripturePanel: View {
     @Environment(AppModel.self) private var app
     @State private var query = ""
-    @State private var translations: [BibleTranslation] = []
+    @State private var more: [(tag: String, label: String)] = []
+    @State private var lastRef: BibleReference?
     @State private var result: Presentation?
     @State private var error: String?
     @State private var loading = false
@@ -19,17 +20,19 @@ struct ScripturePanel: View {
                     Button("Go") { Task { await lookup() } }.disabled(query.isEmpty || loading)
                 }
                 HStack {
-                    Picker("Translation", selection: $store.data.settings.bibleTranslation) {
-                        ForEach(translations) { t in Text("\(t.abbreviation) — \(t.name)").tag(t.id) }
-                        if !translations.contains(where: { $0.id == store.data.settings.bibleTranslation }) {
-                            Text(store.data.settings.bibleTranslation.uppercased()).tag(store.data.settings.bibleTranslation)
-                        }
-                    }
-                    .labelsHidden()
+                    BibleVersionPicker(more: more)
                     Stepper("\(store.data.settings.bibleVersesPerSlide)/slide", value: $store.data.settings.bibleVersesPerSlide, in: 1...6)
                         .fixedSize()
                 }
                 .font(.caption)
+                Toggle("Keep line breaks", isOn: Binding(get: { store.data.settings.bibleKeepLineBreaks ?? false },
+                                                         set: { store.data.settings.bibleKeepLineBreaks = $0 }))
+                    .font(.caption)
+                    .help("Off (default): scripture runs as straight text. On: keeps the line breaks the translation has, such as poetry.")
+                if let v = BibleVersionPicker.currentCurated(app.scripture), !app.scripture.status(for: v).isReady {
+                    Label(app.scripture.status(for: v).detail, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption).foregroundStyle(.orange)
+                }
 
                 if loading { ProgressView().frame(maxWidth: .infinity) }
                 if let error { Text(error).foregroundStyle(.red).font(.caption) }
@@ -78,10 +81,14 @@ struct ScripturePanel: View {
             }
             .padding(10)
         }
-        .task { translations = await app.scripture.translations() }
-        .onChange(of: app.store.data.settings.bibleProvider) { _, _ in
-            Task { translations = await app.scripture.translations() }
+        .task {
+            await app.scripture.refreshCatalog()
+            more = await app.scripture.moreOptions()
         }
+        // Changing the version or the line-break option rebuilds the slides that are showing in the panel.
+        .onChange(of: app.store.data.settings.bibleSelection) { _, _ in if lastRef != nil { Task { await lookup() } } }
+        .onChange(of: app.store.data.settings.bibleKeepLineBreaks) { _, _ in if lastRef != nil { Task { await lookup() } } }
+        .onChange(of: app.store.data.settings.bibleVersesPerSlide) { _, _ in if lastRef != nil { Task { await lookup() } } }
     }
 
     private func lookup(show: Bool = false) async {
@@ -89,6 +96,7 @@ struct ScripturePanel: View {
             error = "Couldn't read that reference. Try “John 3:16-18”."
             return
         }
+        lastRef = ref
         loading = true
         error = nil
         defer { loading = false }
@@ -120,5 +128,35 @@ struct DetectionRow: View {
             Button { app.listening.dismiss(d) } label: { Image(systemName: "xmark") }.buttonStyle(.borderless)
         }
         .card()
+    }
+}
+
+
+/// The church's Bible versions first (in the order they use), then everything else a source can supply.
+struct BibleVersionPicker: View {
+    @Environment(AppModel.self) private var app
+    var more: [(tag: String, label: String)]
+
+    static func currentCurated(_ svc: ScriptureService) -> CuratedVersion? {
+        let sel = svc.selection
+        guard sel.hasPrefix("v:") else { return nil }
+        return BibleCatalog.curated(key: String(sel.dropFirst(2)))
+    }
+
+    var body: some View {
+        let svc = app.scripture
+        Picker("Bible", selection: Binding(get: { svc.selection }, set: { svc.selection = $0 })) {
+            ForEach(svc.statuses) { st in
+                Text("\(st.isReady ? "" : "⚠︎ ")\(st.version.name)").tag("v:\(st.version.key)")
+            }
+            if !more.isEmpty {
+                Divider()
+                ForEach(more, id: \.tag) { Text($0.label).tag($0.tag) }
+            }
+            if !svc.selection.hasPrefix("v:"), !more.contains(where: { $0.tag == svc.selection }) {
+                Text(svc.selection).tag(svc.selection)
+            }
+        }
+        .labelsHidden()
     }
 }

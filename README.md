@@ -80,7 +80,7 @@ The app targets macOS 26 or later. The library lives in `~/Library/Application S
 | Looks | `Model/Models.swift` (`Look`, `ScreenLookConfig`) | Per screen: which layers show and how slides render (full slide, transparent text, lower third, hidden). Can be set **per slide type**, e.g. scripture becomes the Bible lower third on the stream |
 | Outputs | `Core/Outputs/` | Mac displays (borderless full screen), DeckLink (fill+key), NDI (with alpha), floating test window |
 | Planning Center | `Integrations/PlanningCenter/` | Plans become playlists. Songs pull CCLI lyrics and the sequence from arrangements. The service template maps items to presentations. Auto-syncs every N minutes |
-| Bible | `Integrations/Bible/` | bible-api.com (public domain, no key), API.Bible (thousands of translations), ESV API, or any Zefania/OSIS XML you're licensed for |
+| Bible | `Integrations/Bible/` | The nine versions the church uses (see **Bible versions**), plus anything else API.Bible or an imported Zefania/OSIS XML supplies |
 | AI listening | `Integrations/Speech/` | On-device speech recognition. `LyricFollower` (arrangement-aware, fuzzy, confidence, off-script hold) and `ScriptureDetector` (understands spoken references) |
 | Remote and web stage display | `Integrations/Remote/` | `http://<mac-ip>:8090` for the remote, `/stage` for the stage display. Optional PIN |
 | MIDI | `Integrations/MIDI/` | Virtual "Lumen" source and destination for Lightkey, plus incoming-MIDI → action mappings |
@@ -143,6 +143,22 @@ MultiTracks.com does not offer a public API for lyrics, so Lumen doesn't scrape 
 - **Stage display:** go to **Setup → Stage → Chords** to show or hide the chords and choose Nashville numbers, letters, or both, and the chord color. The phone/tablet stage page (`/stage`) shows them too.
 - **Planning Center:** if an arrangement has a chord chart attached in Planning Center, sync applies it automatically. It never overwrites chords you've already fixed by hand.
 
+## Bible versions
+
+The picker lists the church's nine versions in ProPresenter's order: CSB, ESV, KJV, NASB 1995, NASB 2020, NIV, NKJV, NLT and The Message. A ⚠︎ means that version isn't ready yet, and the panel says why.
+
+| Version | Where it comes from |
+|---|---|
+| KJV | Works now, no key (public domain) |
+| ESV | Free key from api.esv.org, pasted in Settings → Bible |
+| NLT | Free key from api.nlt.to (Tyndale), pasted in Settings → Bible |
+| CSB, NASB 1995, NASB 2020, NIV, NKJV, The Message | Through API.Bible if your key's licence includes them, or an imported licensed Zefania/OSIS XML file |
+
+These translations are copyrighted, so Lumen doesn't ship their text. It routes each one to the publisher's own service.
+
+- **Line breaks:** removed by default, so scripture reads as straight text from top to bottom. Tick **Keep line breaks** in the Scripture tab (or Settings) to bring back the translation's own breaks, such as poetry. Changing it rebuilds the slides right away.
+- **Verse boundaries:** a slide never starts in the middle of a verse. If a verse doesn't fit, it moves whole to the next slide. Fit is measured with the real theme font and size.
+
 ## AI lyric following and scripture detection
 
 - Choose the audio input under **Live panel → waveform tab**. A clean vocal or pastor feed from the board (USB, Dante or aux) works much better than a room mic.
@@ -162,7 +178,7 @@ Microphone and Speech Recognition (AI listening), Camera (capture inputs), Scree
 
 ## How this was tested
 
-Automated (`xcodebuild test`, 114 tests): lyric/Bible/chord parsing and fuzzing (random and hostile input, run for hangs and crashes); the live engine under 3,000 random operations; Planning Center sync replaying a service shaped like a real plan; the remote server over real sockets with malformed requests; library damage and recovery; scheduling across daylight saving; the updater's safety paths with real signed apps (update, crash-on-launch rollback, wrong version/checksum/signer, read-only folder); pixel checks of the compositor; and every screen rendered with realistic data.
+Automated (`xcodebuild test`, 138 tests): lyric/Bible/chord parsing and fuzzing (random and hostile input, run for hangs and crashes); the live engine under 3,000 random operations; Planning Center sync replaying a service shaped like a real plan; the remote server over real sockets with malformed requests; library damage and recovery; scheduling across daylight saving; the updater's safety paths with real signed apps (update, crash-on-launch rollback, wrong version/checksum/signer, read-only folder); pixel checks of the compositor; and every screen rendered with realistic data.
 
 Soak (real app, three outputs at 60/30/15 fps, 1080p video loop behind the lyrics): 25 minutes and 10 minutes of randomized operator actions over the phone-remote API (slide changes, clears, looks, props, messages, timers, macros, the countdown video). No crashes or errors; memory held near 200 MB; open files and threads stayed flat; every output held its exact rate with 3 late frames out of ~90,000.
 

@@ -1,13 +1,14 @@
 import Foundation
 
 enum BibleProviderKind: String, Codable, CaseIterable, Identifiable {
-    case bibleAPIcom, apiBible, esv, local
+    case bibleAPIcom, apiBible, esv, nlt, local
     var id: String { rawValue }
     var title: String {
         switch self {
         case .bibleAPIcom: "bible-api.com (public domain, no key)"
         case .apiBible: "API.Bible (2,500+ translations, free key)"
         case .esv: "ESV API (Crossway key)"
+        case .nlt: "NLT API (Tyndale key)"
         case .local: "Imported Bible files (XML)"
         }
     }
@@ -26,6 +27,11 @@ struct AppSettings: Codable, Hashable {
     var bibleTranslation: String = "kjv"
     var bibleVersesPerSlide: Int = 1
     var bibleMaxCharsPerSlide: Int = 260
+    /// The chosen Bible: "v:esv" (one of the church's curated versions) or "p:<provider>:<id>" (anything else).
+    /// Nil falls back to the older provider + translation pair.
+    var bibleSelection: String? = nil
+    /// Scripture is shown as straight running text. Tick this to keep the line breaks the translation has (poetry, etc.).
+    var bibleKeepLineBreaks: Bool? = nil
 
     // Themes per presentation kind
     var defaultThemeByKind: [PresentationKind: UUID] = [:]
@@ -59,7 +65,7 @@ struct AppSettings: Codable, Hashable {
     var calendarName: String = ""
 
     enum CodingKeys: String, CodingKey {
-        case pcoAppID, pcoServiceTypeIDs, pcoSyncDaysAhead, pcoAutoSyncMinutes, pcoTemplateID, bibleProvider, bibleTranslation, bibleVersesPerSlide, bibleMaxCharsPerSlide, defaultThemeByKind, defaultLookID, transitionSeconds, defaultMediaScale, remoteEnabled, remotePort, remotePIN, volunteerPIN, startInVolunteerMode, midiEnabled, midiOutputName, listenInputDeviceUID, lyricFollowAutoAdvance, lyricFollowThreshold, scriptureDetection, speechLocale, calendarTriggersEnabled, calendarName
+        case pcoAppID, pcoServiceTypeIDs, pcoSyncDaysAhead, pcoAutoSyncMinutes, pcoTemplateID, bibleProvider, bibleTranslation, bibleVersesPerSlide, bibleMaxCharsPerSlide, bibleSelection, bibleKeepLineBreaks, defaultThemeByKind, defaultLookID, transitionSeconds, defaultMediaScale, remoteEnabled, remotePort, remotePIN, volunteerPIN, startInVolunteerMode, midiEnabled, midiOutputName, listenInputDeviceUID, lyricFollowAutoAdvance, lyricFollowThreshold, scriptureDetection, speechLocale, calendarTriggersEnabled, calendarName
     }
 
     /// A missing or unreadable setting falls back to its default, so adding a setting in a new version never
@@ -79,6 +85,8 @@ struct AppSettings: Codable, Hashable {
         read(.bibleTranslation, \.bibleTranslation)
         read(.bibleVersesPerSlide, \.bibleVersesPerSlide)
         read(.bibleMaxCharsPerSlide, \.bibleMaxCharsPerSlide)
+        read(.bibleSelection, \.bibleSelection)
+        read(.bibleKeepLineBreaks, \.bibleKeepLineBreaks)
         read(.defaultThemeByKind, \.defaultThemeByKind)
         read(.defaultLookID, \.defaultLookID)
         read(.transitionSeconds, \.transitionSeconds)

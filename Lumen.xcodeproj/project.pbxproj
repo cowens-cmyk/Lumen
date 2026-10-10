@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		007939493ECDC524199C36A3 /* LyricFollower.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49957E313B75D9694754A9FB /* LyricFollower.swift */; };
 		02C072360F8DB238C41E7DEB /* BrowserController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB430595558DC092AC74E6B /* BrowserController.swift */; };
+		05B23C7C961B3958C15AF6D4 /* ScriptureSlidesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941D9D0C3D49160B7AC85FB1 /* ScriptureSlidesTests.swift */; };
 		076818DAF875B34E1F0E53B3 /* HardwareSinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADCD742F642B2B30318EEE7 /* HardwareSinks.swift */; };
 		0F8B336FCC17A312455AA62D /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92687044A1286889831F2FBF /* MIDIManager.swift */; };
 		114B034FD593637987CE0CE8 /* ScripturePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CBC870DFA2660D3963391D4 /* ScripturePanel.swift */; };
@@ -55,6 +56,7 @@
 		B934E507CCAF5B47E382E3DE /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 954CEE9D11F354DB4E7D9D99 /* Scheduler.swift */; };
 		BB5D32D3084D20837823A00B /* SlideGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BFC6AF4162C3FEEF1FA239 /* SlideGrid.swift */; };
 		BB95F34ADCD7217A07496708 /* LiveEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7AB8B2D4629C760E20A5254 /* LiveEngine.swift */; };
+		BC2506CB6C84E5CA986D6A53 /* BibleVersionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45BD48A2930C5C94040FD0BC /* BibleVersionsTests.swift */; };
 		C01FE5C7B0497C3994CBE5C9 /* ScriptureDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D20AFBAAB0477E14752FE4 /* ScriptureDetector.swift */; };
 		C4CC5C1118FD9BE7A48029B0 /* ActionListEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46566F45EBFC92B389CCD626 /* ActionListEditor.swift */; };
 		CA7098B8DB95CFDF50E8FFC0 /* Importer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FAF0D7853563DEB1601EF4 /* Importer.swift */; };
@@ -112,6 +114,7 @@
 		43F3B58D045D2AED57BDBE8E /* LMNDI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMNDI.h; sourceTree = "<group>"; };
 		44BFC6AF4162C3FEEF1FA239 /* SlideGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideGrid.swift; sourceTree = "<group>"; };
 		450980EAE2351DF3A4F969DF /* ThemeEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeEditor.swift; sourceTree = "<group>"; };
+		45BD48A2930C5C94040FD0BC /* BibleVersionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleVersionsTests.swift; sourceTree = "<group>"; };
 		46566F45EBFC92B389CCD626 /* ActionListEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionListEditor.swift; sourceTree = "<group>"; };
 		470D9DAA1C72E244BA569699 /* LMDeckLink.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMDeckLink.mm; sourceTree = "<group>"; };
 		49957E313B75D9694754A9FB /* LyricFollower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricFollower.swift; sourceTree = "<group>"; };
@@ -138,6 +141,7 @@
 		87EF32918A0E39FA3B5E2525 /* LumenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenApp.swift; sourceTree = "<group>"; };
 		894A56D11F0E29E7B1D2ACCC /* BackgroundPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundPicker.swift; sourceTree = "<group>"; };
 		92687044A1286889831F2FBF /* MIDIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIManager.swift; sourceTree = "<group>"; };
+		941D9D0C3D49160B7AC85FB1 /* ScriptureSlidesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureSlidesTests.swift; sourceTree = "<group>"; };
 		954CEE9D11F354DB4E7D9D99 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
 		98BC8F33EA2E0C3644375D88 /* Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sidebar.swift; sourceTree = "<group>"; };
 		9C0D0EC241CAB160B7B9AA65 /* ScreenRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRenderer.swift; sourceTree = "<group>"; };
@@ -395,6 +399,7 @@
 		C3316CAB852D28887A24F55A /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				45BD48A2930C5C94040FD0BC /* BibleVersionsTests.swift */,
 				7F60025706F39AF051B6BF65 /* ChordTests.swift */,
 				E5B877C30652FC2843A4484D /* EngineHardeningTests.swift */,
 				BE3476C6ED918595B0D62991 /* FuzzTests.swift */,
@@ -404,6 +409,7 @@
 				4CBDEF6F54B2AA03104CCCBB /* MediaTests.swift */,
 				12972AF42492015E64191F2D /* PlanningCenterTests.swift */,
 				83EB860D55A7F3B0D35B36EF /* SafetyNetTests.swift */,
+				941D9D0C3D49160B7AC85FB1 /* ScriptureSlidesTests.swift */,
 				3462FDBA30695A33B0FEBD17 /* UISmokeTests.swift */,
 				0818F10A9E5FF2197AAB0576 /* Fixtures */,
 			);
@@ -647,6 +653,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BC2506CB6C84E5CA986D6A53 /* BibleVersionsTests.swift in Sources */,
 				20A89CC3363CF3BBFB6C7B9C /* ChordTests.swift in Sources */,
 				90085290DEFB48F9E0C12DBE /* EngineHardeningTests.swift in Sources */,
 				59AFFE4900AF68A622166C20 /* FuzzTests.swift in Sources */,
@@ -656,6 +663,7 @@
 				4DFEA1743B5ABDCD3D0F7583 /* MediaTests.swift in Sources */,
 				EEA192188EBEBBFF5AC4D21B /* PlanningCenterTests.swift in Sources */,
 				5F7B752B10AA955DADE067B7 /* SafetyNetTests.swift in Sources */,
+				05B23C7C961B3958C15AF6D4 /* ScriptureSlidesTests.swift in Sources */,
 				ACC8EF8FF48ED3444B20E259 /* UISmokeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -770,7 +778,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/App/Lumen.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -785,7 +793,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreFoundation,
@@ -869,7 +877,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/App/Lumen.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -884,7 +892,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreFoundation,

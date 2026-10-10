@@ -573,27 +573,47 @@ struct BibleSettings: View {
     @Environment(AppModel.self) private var app
     @State private var apiBibleKey = Keychain.get("apibible-key")
     @State private var esvKey = Keychain.get("esv-key")
+    @State private var nltKey = Keychain.get("nlt-key")
     @State private var importAbbr = ""
     @State private var message: String?
 
     var body: some View {
         @Bindable var store = app.store
+        let svc = app.scripture
         Form {
-            Picker("Source", selection: $store.data.settings.bibleProvider) {
-                ForEach(BibleProviderKind.allCases) { Text($0.title).tag($0) }
+            Section {
+                ForEach(svc.statuses) { st in
+                    HStack(alignment: .firstTextBaseline) {
+                        Image(systemName: st.isReady ? "checkmark.circle.fill" : "exclamationmark.circle")
+                            .foregroundStyle(st.isReady ? .green : .orange)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(st.version.name).font(.body.weight(.medium))
+                            Text(st.detail).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if svc.selection == "v:\(st.version.key)" { Text("selected").font(.caption2).foregroundStyle(.secondary) }
+                    }
+                }
+                HStack {
+                    Button(svc.checking ? "Checking…" : "Check Availability") { Task { await refresh() } }.disabled(svc.checking)
+                    if let p = svc.apiBibleProblem { Text(p).font(.caption).foregroundStyle(.red) }
+                }
+            } header: { Text("Your Bible versions") } footer: {
+                Text("Most modern translations are copyrighted, so Lumen can't contain them. It connects to each publisher's licensed service instead. KJV is public domain and always works. ESV and NLT each have a free API key. NASB (1995 and 2020), NIV, NKJV, CSB and The Message come through API.Bible if your key includes them, or from a licensed file you import below.")
             }
-            Section("API.Bible") {
-                SecureField("API key", text: $apiBibleKey).onSubmit { Keychain.set("apibible-key", apiBibleKey) }
-                Link("Get a free key at scripture.api.bible", destination: URL(string: "https://scripture.api.bible")!)
-                Text("Includes NASB, CSB, NKJV*, AMP, Spanish, and thousands more depending on what your key is licensed for.")
-                    .font(.caption).foregroundStyle(.secondary)
+
+            Section("API keys (kept in your Mac's Keychain)") {
+                SecureField("API.Bible key", text: $apiBibleKey).onSubmit { save() }
+                Link("Get a free API.Bible key", destination: URL(string: "https://scripture.api.bible")!).font(.caption)
+                SecureField("ESV API key (Crossway)", text: $esvKey).onSubmit { save() }
+                Link("Get a free ESV key", destination: URL(string: "https://api.esv.org")!).font(.caption)
+                SecureField("NLT API key (Tyndale)", text: $nltKey).onSubmit { save() }
+                Link("Get a free NLT key", destination: URL(string: "https://api.nlt.to")!).font(.caption)
+                Button("Save Keys and Check") { Task { save(); await refresh() } }
             }
-            Section("ESV") {
-                SecureField("ESV API key", text: $esvKey).onSubmit { Keychain.set("esv-key", esvKey) }
-                Link("Get a key at api.esv.org", destination: URL(string: "https://api.esv.org")!)
-            }
-            Section("Import a Bible file") {
-                Text("Any translation your church is licensed to display (NIV, NLT, etc.) can be imported from a Zefania or OSIS XML file.")
+
+            Section("Import a licensed Bible file") {
+                Text("If your church holds a licence for a translation, import it from a Zefania or OSIS XML file and it's used first, even offline. Name it with the translation's abbreviation (NIV, NASB 2020, …) so Lumen recognises it.")
                     .font(.caption).foregroundStyle(.secondary)
                 HStack {
                     TextField("Abbreviation (e.g. NIV)", text: $importAbbr).frame(width: 180)
@@ -603,27 +623,37 @@ struct BibleSettings: View {
                         guard panel.runModal() == .OK, let u = panel.url else { return }
                         do {
                             let t = try app.scripture.local.importXML(at: u, abbreviation: importAbbr)
-                            store.data.settings.bibleProvider = .local
-                            store.data.settings.bibleTranslation = t.id
                             message = "Imported \(t.name)"
+                            Task { await refresh() }
                         } catch { message = error.localizedDescription }
                     }
                 }
                 if let message { Text(message).font(.caption) }
             }
-            Section("Slides") {
+
+            Section("Scripture slides") {
+                Toggle("Keep line breaks", isOn: Binding(get: { store.data.settings.bibleKeepLineBreaks ?? false },
+                                                        set: { store.data.settings.bibleKeepLineBreaks = $0 }))
+                Text("Off by default: scripture runs as straight text from top to bottom. Turn on to keep the translation's own line breaks (poetry and the like).")
+                    .font(.caption).foregroundStyle(.secondary)
                 Stepper("Verses per slide: \(store.data.settings.bibleVersesPerSlide)", value: $store.data.settings.bibleVersesPerSlide, in: 1...8)
                 Stepper("Max characters per slide: \(store.data.settings.bibleMaxCharsPerSlide)", value: $store.data.settings.bibleMaxCharsPerSlide, in: 80...800, step: 20)
-                Text("Scripture slides use the theme set for “Scripture” in Themes, and Looks can put them in a Bible lower third on the stream automatically.")
+                Text("A slide always starts at the beginning of a verse. If the next verse doesn't fit, the whole verse moves to the next slide. Slides use the theme set for “Scripture” in Themes, and Looks can show them as the Bible lower third on the stream automatically.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .onDisappear {
-            Keychain.set("apibible-key", apiBibleKey)
-            Keychain.set("esv-key", esvKey)
-        }
+        .task { await refresh() }
+        .onDisappear { save() }
     }
+
+    private func save() {
+        Keychain.set("apibible-key", apiBibleKey)
+        Keychain.set("esv-key", esvKey)
+        Keychain.set("nlt-key", nltKey)
+    }
+
+    private func refresh() async { await app.scripture.refreshCatalog() }
 }
 
 // MARK: - Remote & MIDI

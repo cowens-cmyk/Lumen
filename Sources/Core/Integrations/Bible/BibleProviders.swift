@@ -15,13 +15,14 @@ struct BibleTranslation: Hashable, Identifiable, Codable {
 }
 
 enum BibleError: LocalizedError {
-    case missingKey(String), notFound, http(Int), parse
+    case missingKey(String), notFound, http(Int), parse, unavailable(String)
     var errorDescription: String? {
         switch self {
         case .missingKey(let s): "Add your \(s) API key in Settings → Bible."
         case .notFound: "That passage wasn't found in this translation."
         case .http(let c): "The Bible service returned HTTP \(c)."
         case .parse: "Couldn't read the passage returned by the Bible service."
+        case .unavailable(let why): why
         }
     }
 }
@@ -72,9 +73,7 @@ func parseBracketedVerses(_ text: String, chapter: Int) -> [BibleVerse] {
         }
         let start = m.range.location + m.range.length
         let end = i + 1 < matches.count ? matches[i + 1].range.location : ns.length
-        let body = ns.substring(with: NSRange(location: start, length: end - start))
-            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let body = BibleText.tidy(ns.substring(with: NSRange(location: start, length: end - start)))
         if !body.isEmpty { verses.append(BibleVerse(chapter: ch, number: num, text: body)) }
     }
     return verses
@@ -114,8 +113,7 @@ struct BibleAPIComProvider: BibleProvider {
         guard let verses = json?["verses"] as? [[String: Any]], !verses.isEmpty else { throw BibleError.notFound }
         return verses.compactMap { v in
             guard let n = v["verse"] as? Int, let t = v["text"] as? String else { return nil }
-            return BibleVerse(chapter: v["chapter"] as? Int ?? ref.chapter, number: n,
-                              text: t.trimmingCharacters(in: .whitespacesAndNewlines))
+            return BibleVerse(chapter: v["chapter"] as? Int ?? ref.chapter, number: n, text: BibleText.tidy(t))
         }
     }
 }
@@ -323,5 +321,134 @@ private final class BibleXMLDelegate: NSObject, XMLParserDelegate {
         case "NOTE": if book > 0 && verse > 0 { inVerse = true }
         default: break
         }
+    }
+}
+
+
+// MARK: - Text clean-up shared by every source
+
+enum BibleText {
+    /// Trims each line and drops blank ones, but keeps the translation's own line breaks (poetry, paragraphs) as "\n".
+    /// Whether they're shown is decided later, when slides are built.
+    static func tidy(_ raw: String) -> String {
+        raw.replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: "\n")
+            .map { $0.replacingOccurrences(of: #"[ \t\u00A0]+"#, with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+    }
+
+    /// The text as it goes on a slide. By default every line break becomes a space, so scripture runs as straight text from
+    /// top to bottom; with `keepLineBreaks` the translation's own breaks stay.
+    static func forSlide(_ text: String, keepLineBreaks: Bool) -> String {
+        let lines = tidy(text).components(separatedBy: "\n")
+        return lines.joined(separator: keepLineBreaks ? "\n" : " ")
+    }
+}
+
+// MARK: - NLT (Tyndale's free API: https://api.nlt.to)
+
+struct NLTProvider: BibleProvider {
+    var apiKey: String
+
+    func translations() async throws -> [BibleTranslation] {
+        [BibleTranslation(id: "nlt", abbreviation: "NLT", name: "New Living Translation")]
+    }
+
+    func passage(_ ref: BibleReference, translation: String) async throws -> [BibleVerse] {
+        guard !apiKey.isEmpty else { throw BibleError.missingKey("NLT") }
+        var c = URLComponents(string: "https://api.nlt.to/api/passages")!
+        c.queryItems = [URLQueryItem(name: "ref", value: Self.refString(ref)), URLQueryItem(name: "version", value: "NLT"),
+                        URLQueryItem(name: "key", value: apiKey)]
+        var req = URLRequest(url: c.url!, timeoutInterval: 15)
+        req.setValue("text/html", forHTTPHeaderField: "Accept")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        if let h = resp as? HTTPURLResponse, !(200..<300).contains(h.statusCode) { throw h.statusCode == 404 ? BibleError.notFound : BibleError.http(h.statusCode) }
+        let verses = Self.parse(html: String(decoding: data, as: UTF8.self), fallbackChapter: ref.chapter)
+        if verses.isEmpty { throw BibleError.notFound }
+        return verses
+    }
+
+    /// "John 3:16-18", "1 Corinthians 13:4-7", "Psalms 23", "John 3:36-4:1" (full book names, as the service documents).
+    static func refString(_ r: BibleReference) -> String {
+        let book = r.book.name
+        guard let v = r.verseStart else { return "\(book) \(r.chapter)" }
+        var s = "\(book) \(r.chapter):\(v)"
+        if let ec = r.endChapter, ec != r.chapter { s += "-\(ec):\(r.verseEnd ?? 1)" }
+        else if let e = r.verseEnd, e != v { s += "-\(e)" }
+        return s
+    }
+
+    /// The API returns one <verse_export bk=… ch=… vn=…> block per verse. Footnote markers and their note text, verse numbers
+    /// and headings are removed; poetry/paragraph structure becomes line breaks.
+    static func parse(html: String, fallbackChapter: Int) -> [BibleVerse] {
+        let block = try! NSRegularExpression(pattern: #"<verse_export\b([^>]*)>(.*?)</verse_export>"#, options: [.dotMatchesLineSeparators])
+        let ns = html as NSString
+        var out: [BibleVerse] = []
+        for m in block.matches(in: html, range: NSRange(location: 0, length: ns.length)) {
+            let attrs = ns.substring(with: m.range(at: 1))
+            func attr(_ name: String) -> Int? {
+                guard let r = attrs.range(of: name + #"="(\d+)""#, options: .regularExpression) else { return nil }
+                return Int(attrs[r].filter(\.isNumber))
+            }
+            guard let vn = attr("vn") else { continue }
+            let text = clean(ns.substring(with: m.range(at: 2)))
+            if !text.isEmpty { out.append(BibleVerse(chapter: attr("ch") ?? fallbackChapter, number: vn, text: text)) }
+        }
+        return out
+    }
+
+    static func clean(_ fragment: String) -> String {
+        var s = fragment
+        s = removeElements(s, opening: #"<span class="tn">"#, tag: "span")          // footnote text (nested spans inside)
+        s = removeElements(s, opening: #"<a class="a-tn">"#, tag: "a")              // footnote marker "*"
+        s = removeElements(s, opening: #"<span class="vn">"#, tag: "span")          // the verse number itself
+        s = s.replacingOccurrences(of: #"<h\d[^>]*>.*?</h\d>"#, with: "", options: [.regularExpression])   // section headings
+        s = s.replacingOccurrences(of: #"<br\s*/?>|</p>|</div>|<span class="(?:line|poetry|indent)[^"]*">"#, with: "\n", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"<[^>]+>"#, with: "", options: .regularExpression)
+        s = decodeEntities(s)
+        return BibleText.tidy(s)
+    }
+
+    /// Removes every element that starts with `opening`, counting nested `<tag …>` so a footnote containing other spans is
+    /// taken out whole.
+    static func removeElements(_ html: String, opening: String, tag: String) -> String {
+        var s = html
+        let open = "<" + tag, close = "</" + tag + ">"
+        while let start = s.range(of: opening) {
+            var depth = 1
+            var idx = start.upperBound
+            var end = s.endIndex
+            while idx < s.endIndex {
+                let rest = s[idx...]
+                let nextOpen = rest.range(of: open), nextClose = rest.range(of: close)
+                guard let c = nextClose else { break }
+                if let o = nextOpen, o.lowerBound < c.lowerBound {
+                    depth += 1; idx = o.upperBound
+                } else {
+                    depth -= 1; idx = c.upperBound
+                    if depth == 0 { end = idx; break }
+                }
+            }
+            s.removeSubrange(start.lowerBound..<end)
+        }
+        return s
+    }
+
+    static func decodeEntities(_ s: String) -> String {
+        var out = s
+        for (k, v) in ["&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#39;": "'", "&apos;": "'", "&nbsp;": " ",
+                       "&ldquo;": "\u{201C}", "&rdquo;": "\u{201D}", "&lsquo;": "\u{2018}", "&rsquo;": "\u{2019}", "&mdash;": "\u{2014}", "&ndash;": "\u{2013}"] {
+            out = out.replacingOccurrences(of: k, with: v)
+        }
+        // numeric entities
+        let re = try! NSRegularExpression(pattern: #"&#(x?[0-9a-fA-F]+);"#)
+        let ns = out as NSString
+        for m in re.matches(in: out, range: NSRange(location: 0, length: ns.length)).reversed() {
+            let code = ns.substring(with: m.range(at: 1))
+            let value = code.hasPrefix("x") ? UInt32(code.dropFirst(), radix: 16) : UInt32(code)
+            if let v = value, let u = Unicode.Scalar(v) { out = (out as NSString).replacingCharacters(in: m.range, with: String(Character(u))) }
+        }
+        return out
     }
 }
