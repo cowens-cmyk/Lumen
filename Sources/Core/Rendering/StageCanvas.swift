@@ -20,13 +20,15 @@ struct StageCanvas: View {
 
     var body: some View {
         let scale = s.layout.textScale
+        let footer = s.layout.footer == true
+        let bigTimers = s.layout.style == .timers
         VStack(spacing: 0) {
             HStack(alignment: .top) {
-                if s.layout.showClock {
+                if s.layout.showClock, !footer {
                     Text(s.clock).font(.system(size: 64 * scale, weight: .bold, design: .monospaced)).foregroundStyle(.white)
                 }
                 Spacer()
-                ForEach(Array(s.timers.enumerated()), id: \.offset) { _, t in
+                ForEach(Array((bigTimers ? [] : s.timers).enumerated()), id: \.offset) { _, t in
                     VStack(alignment: .trailing, spacing: 0) {
                         Text(t.0.uppercased()).font(.system(size: 22 * scale, weight: .semibold)).foregroundStyle(.gray)
                         Text(t.1).font(.system(size: 64 * scale, weight: .bold, design: .monospaced))
@@ -44,7 +46,14 @@ struct StageCanvas: View {
                     .padding(.top, 10)
             }
 
-            if s.layout.showCurrent, s.layout.showChords != false, !s.currentChords.isEmpty {
+            if bigTimers {
+                BigTimers(timers: s.timers, scale: scale)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            if bigTimers, !s.layout.showCurrent {
+                EmptyView()
+            } else if s.layout.showCurrent, s.layout.showChords != false, !s.currentChords.isEmpty {
                 let size = ChordedLyricsView.fittingSize(text: s.current, hasChords: true, base: 92 * scale,
                                                          width: designSize.width - 120, height: 640)
                 ChordedLyricsView(text: s.current, chords: s.currentChords, key: s.key,
@@ -73,7 +82,7 @@ struct StageCanvas: View {
                     HStack {
                         Text(s.nextGroup.isEmpty ? "NEXT" : "NEXT • \(s.nextGroup.uppercased())")
                         Spacer()
-                        if s.layout.showChords != false, let k = s.key { Text("KEY \(k)") }
+                        if !footer, s.layout.showChords != false, let k = s.key { Text("KEY \(k)") }
                     }
                     .font(.system(size: 24 * scale, weight: .heavy)).foregroundStyle(.gray)
                     if s.layout.showChords != false, !s.nextChords.isEmpty {
@@ -95,9 +104,59 @@ struct StageCanvas: View {
                 .padding(.horizontal, 60).padding(.vertical, 30)
                 .background(Color.white.opacity(0.08))
             }
+
+            if footer {
+                StageFooter(key: s.key, clock: s.clock, showKey: s.layout.showKey != false,
+                            showClock: s.layout.showClock, scale: scale)
+            }
         }
         .frame(width: designSize.width, height: designSize.height)
         .background(s.layout.background.color)
+    }
+}
+
+/// Sermon/countdown template: the timers are the whole point, so they fill the middle of the screen.
+struct BigTimers: View {
+    var timers: [(String, String)]
+    var scale: Double
+
+    var body: some View {
+        let size = (timers.count <= 1 ? 300.0 : timers.count == 2 ? 220.0 : 150.0) * scale
+        VStack(spacing: 24 * scale) {
+            ForEach(Array(timers.enumerated()), id: \.offset) { _, t in
+                VStack(spacing: 0) {
+                    Text(t.0.uppercased()).font(.system(size: 34 * scale, weight: .heavy)).foregroundStyle(.gray)
+                    Text(t.1).font(.system(size: size, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(t.1.hasPrefix("-") ? .red : .white)
+                        .minimumScaleFactor(0.4).lineLimit(1)
+                }
+            }
+        }
+    }
+}
+
+/// The strip along the bottom of the worship display: the song's key on the left, the time of day on the right.
+struct StageFooter: View {
+    var key: String?
+    var clock: String
+    var showKey: Bool
+    var showClock: Bool
+    var scale: Double
+
+    var body: some View {
+        HStack {
+            if showKey, let key, !key.isEmpty {
+                Text("KEY").font(.system(size: 30 * scale, weight: .heavy)).foregroundStyle(.gray)
+                Text(key).font(.system(size: 64 * scale, weight: .heavy)).foregroundStyle(.white)
+            }
+            Spacer()
+            if showClock {
+                Text(clock).font(.system(size: 64 * scale, weight: .bold, design: .monospaced)).foregroundStyle(.white)
+            }
+        }
+        .padding(.horizontal, 60).padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .background(Color.white.opacity(0.12))
     }
 }
 

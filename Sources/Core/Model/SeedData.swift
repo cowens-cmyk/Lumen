@@ -29,9 +29,12 @@ enum SeedData {
             .announcement: announce.id, .media: worship.id, .generic: worship.id,
         ]
 
-        let stage = StageLayout(name: "Worship Team")
+        let stage = StageLayout.worship()
         let speaker = StageLayout(name: "Speaker", showNext: true, showNotes: true)
-        d.stageLayouts = [stage, speaker]
+        let sermonTimer = StageLayout.sermonTimer()
+        d.stageLayouts = [stage, speaker, sermonTimer]
+        d.settings.stageLayoutByKind[PresentationKind.sermon.rawValue] = sermonTimer.id
+        d.settings.stageTemplatesVersion = 1
 
         let audience = Screen(name: "Audience", role: .audience, destinations: [.window])
         let stream = Screen(name: "Livestream", role: .stream, destinations: [])
@@ -69,6 +72,7 @@ enum SeedData {
         ]
         d.stageLayouts[0].timerIDs = [d.timers[0].id]
         d.stageLayouts[1].timerIDs = [d.timers[1].id]
+        d.stageLayouts[2].timerIDs = [d.timers[1].id]
 
         d.props = [
             Prop(name: "Speaker Name", kind: .lowerThird, title: "Pastor Name", subtitle: "Lead Pastor", autoHideSeconds: 8),

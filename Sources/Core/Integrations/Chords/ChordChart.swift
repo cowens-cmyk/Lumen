@@ -88,6 +88,25 @@ enum ChordChartReader {
 
     // MARK: Entry points
 
+    /// A quick look at a PDF's text layer (no OCR, so a big slide deck isn't slowed down): does it have several
+    /// lines made only of chords or Nashville numbers? That's a chord chart rather than slides.
+    static func looksLikeChart(_ doc: PDFDocument) -> Bool {
+        var chordLines = 0
+        for i in 0..<min(doc.pageCount, 4) {
+            guard let text = doc.page(at: i)?.string else { continue }
+            for line in text.components(separatedBy: .newlines) {
+                let tokens = line.split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\u{00A0}" }).map(String.init)
+                if tokens.count >= 2, tokens.allSatisfy({ Chord.isRealChord($0) }) { chordLines += 1 }
+            }
+        }
+        return chordLines >= 3
+    }
+
+    static func looksLikeChart(url: URL) -> Bool {
+        guard url.pathExtension.lowercased() == "pdf", let doc = PDFDocument(url: url) else { return false }
+        return looksLikeChart(doc)
+    }
+
     static func read(url: URL) throws -> ChordChart {
         let ext = url.pathExtension.lowercased()
         if ext == "pdf" {

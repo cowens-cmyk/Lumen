@@ -25,6 +25,8 @@ struct Importer {
         UTType(filenameExtension: "pptx") ?? .data,
         UTType(filenameExtension: "ppt") ?? .data,
         UTType(filenameExtension: "usr") ?? .data,
+        UTType(filenameExtension: "cho") ?? .data,
+        UTType(filenameExtension: "chordpro") ?? .data,
     ]
 
     /// Imports any supported file(s) and returns created presentations.
@@ -42,6 +44,9 @@ struct Importer {
             let type = UTType(filenameExtension: ext)
             if type?.conforms(to: .movie) == true || type?.conforms(to: .audio) == true {
                 out.append(mediaPresentation(url, kind: type?.conforms(to: .audio) == true ? .audio : .video))
+            } else if ["cho", "chordpro", "crd"].contains(ext) || (ext == "pdf" && ChordChartReader.looksLikeChart(url: url)) {
+                // A chord chart becomes a song: lyrics, song order, key and chords, ready for the stage display.
+                out.append(try songFromChart(url))
             } else if ext == "pdf" {
                 out.append(try pdfPresentation(url))
             } else if ["key", "pptx", "ppt"].contains(ext) {
@@ -74,6 +79,15 @@ struct Importer {
         if out.isEmpty, let first = failures.first, urls.count == failures.count { throw ImportError.keynoteFailed(first) }
         out.forEach(store.upsert)
         return Outcome(presentations: out, failures: failures)
+    }
+
+    /// Builds a whole song from a chord chart: slides from its lyrics, the song order, the key and the chords.
+    func songFromChart(_ url: URL) throws -> Presentation {
+        let chart = try ChordChartReader.read(url: url)
+        var p = Presentation(name: "", kind: .song)
+        ChordMatcher.apply(chart, to: &p, maxLines: maxLines)
+        if p.name.isEmpty { p.name = chart.title.isEmpty ? url.deletingPathExtension().lastPathComponent : chart.title }
+        return p
     }
 
     private var maxLines: Int { store.resolvedTheme(for: Presentation(name: "", kind: .song)).maxLinesPerSlide }

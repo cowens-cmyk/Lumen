@@ -253,6 +253,10 @@ enum SlideAction: Codable, Hashable {
     case stopSlideshow
     case openWeb(String)
     case delay(Double)
+    /// Puts a stage display template (lyrics, sermon timers…) on the stage screens until something else replaces it.
+    case setStageLayout(UUID)
+    /// Goes back to the stage template each stage screen is set to in Settings.
+    case resetStageLayout
 
     var summary: String {
         switch self {
@@ -275,6 +279,8 @@ enum SlideAction: Codable, Hashable {
         case .stopSlideshow: "Stop Slideshow"
         case .openWeb(let u): "Browser: \(u)"
         case .delay(let s): "Wait \(String(format: "%.1f", s))s"
+        case .setStageLayout: "Stage Layout"
+        case .resetStageLayout: "Stage Layout: Default"
         }
     }
 }
@@ -510,6 +516,13 @@ enum ChordStyle: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// What a stage template is for. Lyrics shows the current and next slide; timers makes the countdowns the star.
+enum StageStyle: String, Codable, CaseIterable, Identifiable {
+    case lyrics, timers
+    var id: String { rawValue }
+    var title: String { self == .lyrics ? "Lyrics (current + next)" : "Big timers (sermon, countdown)" }
+}
+
 struct StageLayout: Identifiable, Codable, Hashable {
     var id = UUID()
     var name: String
@@ -521,12 +534,37 @@ struct StageLayout: Identifiable, Codable, Hashable {
     var timerIDs: [UUID] = []
     var textScale: Double = 1
     var background = RGBA.black
-    var currentColor = RGBA.white
-    var nextColor = RGBA(hex: "#FACC15")
+    var currentColor = RGBA(hex: "#FACC15")   // current lyrics yellow, next slide white
+    var nextColor = RGBA.white
     /// Show chords above lyrics (optional so older libraries decode).
     var showChords: Bool? = nil
     var chordStyle: ChordStyle? = nil
     var chordColor: RGBA? = nil
+    /// Bottom bar with the song key and the time of day. Nil = the older layout (clock in the header).
+    var footer: Bool? = nil
+    var showKey: Bool? = nil
+    var style: StageStyle? = nil
+}
+
+extension StageLayout {
+    /// Band display: current lyrics in yellow, next slide in white, and the key and time along the bottom.
+    static func worship() -> StageLayout {
+        var l = StageLayout(name: "Worship Team")
+        l.showClock = true
+        l.footer = true
+        l.showKey = true
+        l.style = .lyrics
+        return l
+    }
+
+    /// Speaker/sermon display: big countdown(s), notes, and the time along the bottom.
+    static func sermonTimer() -> StageLayout {
+        var l = StageLayout(name: "Sermon Timer", showCurrent: false, showNext: false, showNotes: true)
+        l.footer = true
+        l.showKey = false
+        l.style = .timers
+        return l
+    }
 }
 
 // MARK: - Playlists & service templates

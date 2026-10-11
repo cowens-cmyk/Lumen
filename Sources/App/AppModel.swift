@@ -207,6 +207,21 @@ final class AppModel {
         return p
     }
 
+    /// Creates a whole song from a chord chart: lyrics, song order, key and chords.
+    func createSong(fromChart url: URL) {
+        let ok = url.startAccessingSecurityScopedResource()
+        defer { if ok { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let p = try Importer(store: store).songFromChart(url)
+            store.upsert(p)
+            selectedPresentationID = p.id
+            let chords = p.groups.reduce(0) { $0 + $1.slides.filter { $0.chords != nil }.count }
+            flash("Created “\(p.name)”: \(p.groups.count) sections, key \(p.key ?? "not found"), chords on \(chords) slides")
+        } catch {
+            flash("Couldn't read that chord chart: \(error.localizedDescription)")
+        }
+    }
+
     func addToSelectedPlaylist(_ id: UUID) {
         guard let plID = selectedPlaylistID, let i = store.data.playlists.firstIndex(where: { $0.id == plID }) else { return }
         store.data.playlists[i].items.append(PlaylistItem(kind: .presentation(id)))

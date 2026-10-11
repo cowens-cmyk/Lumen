@@ -58,6 +58,11 @@ struct ActionListEditor: View {
         Button("Open Web Page") { actions.append(.openWeb("https://")) }
         Button("Audience Message") { actions.append(.showMessage("")) }
         Button("Stage Message") { actions.append(.stageMessage("")) }
+        Menu("Stage Display Layout") {
+            ForEach(d.stageLayouts) { l in Button(l.name) { actions.append(.setStageLayout(l.id)) } }
+            Divider()
+            Button("Back to the screen's own layout") { actions.append(.resetStageLayout) }
+        }
         Button("Next Slide") { actions.append(.nextSlide) }
         Button("Previous Slide") { actions.append(.previousSlide) }
         Button("Start Slideshow") { actions.append(.startSlideshow(interval: 8)) }
@@ -91,6 +96,13 @@ struct ActionRow: View {
         case .stopTimer(let id): Text("Stop Timer: \(name(d.timers, id) { $0.name })")
         case .resetTimer(let id): Text("Reset Timer: \(name(d.timers, id) { $0.name })")
         case .triggerMacro(let id): Text("Run Macro: \(name(d.macros, id) { $0.name })")
+        case .setStageLayout(let id):
+            Text("Stage layout:")
+            Picker("", selection: Binding(get: { id }, set: { action = .setStageLayout($0) })) {
+                ForEach(d.stageLayouts) { Text($0.name).tag($0.id) }
+                if !d.stageLayouts.contains(where: { $0.id == id }) { Text("Missing").tag(id) }
+            }
+            .labelsHidden().fixedSize()
         case .triggerPresentation(let id, let slide):
             Text("Trigger: \(name(d.presentations, id) { $0.name })")
             Stepper("slide \(slide + 1)", value: Binding(get: { slide }, set: { action = .triggerPresentation(id, slide: max(0, $0)) }))

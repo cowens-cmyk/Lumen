@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(AppModel.self) private var app
     @State private var importing = false
     @State private var pasteLyrics = false
+    @State private var importingChart = false
 
     var body: some View {
         @Bindable var app = app
@@ -48,6 +49,26 @@ struct ContentView: View {
             PresentationEditor(presentationID: box.id).environment(app)
         }
         .sheet(isPresented: $pasteLyrics) { PasteLyricsSheet().environment(app) }
+        .fileImporter(isPresented: $importingChart,
+                      allowedContentTypes: [.pdf, .plainText, UTType(filenameExtension: "cho") ?? .plainText,
+                                            UTType(filenameExtension: "chordpro") ?? .plainText],
+                      allowsMultipleSelection: true) { result in
+            guard case .success(let urls) = result else { return }
+            urls.forEach { app.createSong(fromChart: $0) }
+        }
+        // Dropping files anywhere on the main window imports them (a chord chart PDF becomes a song).
+        .dropDestination(for: URL.self) { urls, _ in
+            guard !urls.isEmpty else { return false }
+            Task {
+                do {
+                    let r = try await Importer(store: app.store).importFiles(urls)
+                    app.selectedPresentationID = r.presentations.first?.id
+                    app.flash("Imported \(r.presentations.count) item\(r.presentations.count == 1 ? "" : "s")"
+                              + (r.failures.isEmpty ? "" : " — couldn't import: " + r.failures.joined(separator: "; ")))
+                } catch { app.flash(error.localizedDescription) }
+            }
+            return true
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: Importer.allowedTypes, allowsMultipleSelection: true) { result in
             guard case .success(let urls) = result else { return }
             Task {
@@ -68,7 +89,7 @@ struct ContentView: View {
     private var operatorView: some View {
         VStack(spacing: 0) {
         HSplitView {
-            Sidebar(importing: $importing, pasteLyrics: $pasteLyrics)
+            Sidebar(importing: $importing, pasteLyrics: $pasteLyrics, importingChart: $importingChart)
                 .frame(minWidth: 230, idealWidth: 270, maxWidth: 380, maxHeight: .infinity)
             SlideGrid()
                 .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
@@ -197,10 +218,34 @@ struct PasteLyricsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
     @State private var text = ""
+    @State private var chooseChart = false
+    @State private var dropTargeted = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("New Song from Lyrics").font(.title2.bold())
+            HStack {
+                Image(systemName: "doc.text.viewfinder").font(.title2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Have the chord chart? Drop the PDF here.").font(.callout.bold())
+                    Text("Lumen builds the lyrics, song order, key and chords for the stage display in one step.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Choose PDF…") { chooseChart = true }
+            }
+            .padding(10)
+            .background(dropTargeted ? Color.accentColor.opacity(0.18) : Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(dropTargeted ? Color.accentColor : .clear, style: StrokeStyle(lineWidth: 2, dash: [6])))
+            .dropDestination(for: URL.self) { urls, _ in
+                guard let url = urls.first(where: ChordEditor.isChartFile) else { return false }
+                app.createSong(fromChart: url); dismiss()
+                return true
+            } isTargeted: { dropTargeted = $0 }
+            .fileImporter(isPresented: $chooseChart, allowedContentTypes: [.pdf, .plainText, UTType(filenameExtension: "cho") ?? .plainText]) { result in
+                if case .success(let url) = result { app.createSong(fromChart: url); dismiss() }
+            }
+            Divider()
             Text("Paste lyrics from SongSelect, Planning Center or anywhere. Section headings like **Verse 1**, **Chorus**, **[Bridge]** become groups; blank lines become slide breaks.")
                 .font(.callout).foregroundStyle(.secondary)
             TextField("Song title", text: $title)

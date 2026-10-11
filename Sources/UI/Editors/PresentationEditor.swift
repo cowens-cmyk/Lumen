@@ -11,6 +11,7 @@ struct PresentationEditor: View {
     @State private var mode = 0
     @State private var selectedSlide: UUID?
     @State private var loaded = false
+    @State private var incomingChart: URL?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,7 +35,7 @@ struct PresentationEditor: View {
                 switch mode {
                 case 1: slidesMode
                 case 2: ArrangementEditor(p: $p)
-                case 4: ChordEditor(p: $p, maxLines: theme.maxLinesPerSlide)
+                case 4: ChordEditor(p: $p, maxLines: theme.maxLinesPerSlide, incoming: $incomingChart)
                 case 3: infoMode
                 default: textMode
                 }
@@ -42,6 +43,13 @@ struct PresentationEditor: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 980, minHeight: 680)
+        // A chord chart dropped anywhere on the editor goes to the Chords tab and is imported.
+        .dropDestination(for: URL.self) { urls, _ in
+            guard let url = urls.first(where: ChordEditor.isChartFile) else { return false }
+            incomingChart = url
+            mode = 4
+            return true
+        }
         .onChange(of: mode) { old, new in
             if old == 0 { applyText() }
             if new == 0 { lyricText = LyricParser.text(for: p) }

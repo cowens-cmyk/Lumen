@@ -269,8 +269,9 @@ final class OutputManager {
     }
 
     func stageSnapshot(for screen: Screen) -> StageSnapshot {
-        let layout = store.data.stageLayouts.first { $0.id == screen.stageLayoutID } ?? store.data.stageLayouts.first
-            ?? StageLayout(name: "Default")
+        let layouts = store.data.stageLayouts
+        let layout = layouts.first { $0.id == engine.stageLayoutOverride } ?? layouts.first { $0.id == screen.stageLayoutID }
+            ?? layouts.first ?? StageLayout(name: "Default")
         let tf = DateFormatter(); tf.dateFormat = "h:mm:ss"
         let next = engine.nextSlide
         return StageSnapshot(

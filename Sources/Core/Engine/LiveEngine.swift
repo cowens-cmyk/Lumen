@@ -26,6 +26,8 @@ final class LiveEngine {
     private(set) var activeProps: [UUID: Date] = [:]
     private(set) var message: String?
     private(set) var stageMessage: String?
+    /// A stage template put up by an action or a presentation-type default; nil = each stage screen's own layout.
+    private(set) var stageLayoutOverride: UUID?
 
     // Timers & slideshow
     private(set) var timers: [UUID: TimerRuntime] = [:]
@@ -155,6 +157,7 @@ final class LiveEngine {
             if slides.isEmpty, let m = presentation.groups.first?.slides.first?.media { playMedia(m) }
             return
         }
+        let entering = livePresentationID != presentation.id || slideCleared
         if let owner = slideshowOwner, owner != presentation.id { stopSlideshow() }   // a slideshow never outlives its presentation
         livePresentationID = presentation.id
         liveIndex = index
@@ -173,6 +176,7 @@ final class LiveEngine {
             clear(.media)   // the clip belonged to the slide we just left
         }
         syncBackground()
+        if entering { applyKindDefaults(for: presentation.kind) }
         changed()
         if !slide.actions.isEmpty { run(slide.actions) }
         if presentation.slideshow.enabled, slideshowInterval == nil { startSlideshow(interval: presentation.slideshow.interval) }
@@ -281,6 +285,7 @@ final class LiveEngine {
             actionTasks.values.forEach { $0.cancel() }   // delayed actions from a macro must not fire after Clear All
             actionTasks = [:]
             clear(.slide); clear(.media); clear(.props); clear(.messages); clear(.audio)
+            stageLayoutOverride = nil
             stopSlideshow()
         case .slide:
             slideCleared = true
@@ -332,6 +337,22 @@ final class LiveEngine {
     func showMessage(_ text: String?) {
         message = (text?.isEmpty ?? true) ? nil : text
         changed()
+    }
+
+    func setStageLayout(_ id: UUID?) {
+        // An id for a deleted template must not blank the stage: fall back to the screen's own layout.
+        stageLayoutOverride = id.flatMap { target in store.data.stageLayouts.contains { $0.id == target } ? target : nil }
+        changed()
+    }
+
+    /// When a presentation of a type goes live: its stage template goes up (or the default returns), and its
+    /// default actions run (start the sermon timer, set a look…), whichever way the operator got there.
+    private func applyKindDefaults(for kind: PresentationKind) {
+        let s = store.data.settings
+        stageLayoutOverride = s.stageLayoutByKind[kind.rawValue].flatMap { id in
+            store.data.stageLayouts.contains { $0.id == id } ? id : nil
+        }
+        if let actions = s.actionsByKind[kind.rawValue], !actions.isEmpty { run(actions) }
     }
 
     func setStageMessage(_ text: String?) {
@@ -437,6 +458,8 @@ final class LiveEngine {
             case .playMedia(let m): playMedia(m)
             case .showMessage(let s): showMessage(s)
             case .stageMessage(let s): setStageMessage(s)
+            case .setStageLayout(let id): setStageLayout(id)
+            case .resetStageLayout: setStageLayout(nil)
             case .triggerPresentation(let id, let slide): if navigationAllowed() { trigger(presentationID: id, index: slide) }
             case .nextSlide: if navigationAllowed() { next() }
             case .previousSlide: if navigationAllowed() { previous() }

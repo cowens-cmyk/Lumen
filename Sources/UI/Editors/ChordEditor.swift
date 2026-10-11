@@ -7,12 +7,17 @@ struct ChordEditor: View {
     @Environment(AppModel.self) private var app
     @Binding var p: Presentation
     var maxLines: Int
+    /// A chart dropped on the editor window; imported as soon as this tab sees it.
+    @Binding var incoming: URL?
 
     @State private var report: ChordMatcher.Report?
     @State private var error: String?
     @State private var previewStyle: ChordStyle = .nashville
     @State private var importing = false
     @State private var showUnmatched = false
+    @State private var useChartOrder = true
+    @State private var replaceLyrics = false
+    @State private var dropTargeted = false
 
     static let keys = ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "Gb", "G", "Ab", "A", "Bb", "B",
                        "Cm", "C#m", "Dm", "Ebm", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "Bbm", "Bm"]
@@ -23,7 +28,7 @@ struct ChordEditor: View {
             Divider()
             if p.groups.isEmpty {
                 ContentUnavailableView("No lyrics yet", systemImage: "music.note.list",
-                                       description: Text("Import a chord chart and Lumen will build the slides from it."))
+                                       description: Text("Drop a chord chart PDF here, or use Import Chord Chart. Lumen builds the lyrics, song order, key and chords from it."))
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -40,13 +45,30 @@ struct ChordEditor: View {
                 }
             }
         }
+        .overlay {
+            if dropTargeted {
+                RoundedRectangle(cornerRadius: 10).strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 3, dash: [8]))
+                    .background(Color.accentColor.opacity(0.08)).padding(6).allowsHitTesting(false)
+            }
+        }
+        .dropDestination(for: URL.self) { urls, _ in
+            guard let url = urls.first(where: Self.isChartFile) else { return false }
+            importChart(url)
+            return true
+        } isTargeted: { dropTargeted = $0 }
+        .onChange(of: incoming) { _, url in
+            guard let url else { return }
+            incoming = nil
+            importChart(url)
+        }
+        .onAppear {
+            if let url = incoming { incoming = nil; importChart(url) }
+        }
         .fileImporter(isPresented: $importing,
                       allowedContentTypes: [.pdf, .plainText, UTType(filenameExtension: "cho") ?? .plainText,
                                             UTType(filenameExtension: "chordpro") ?? .plainText],
                       allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
-            let ok = url.startAccessingSecurityScopedResource()
-            defer { if ok { url.stopAccessingSecurityScopedResource() } }
             importChart(url)
         }
         .sheet(isPresented: $showUnmatched) {
@@ -70,7 +92,14 @@ struct ChordEditor: View {
             Button {
                 importing = true
             } label: { Label("Import Chord Chart…", systemImage: "doc.text.viewfinder") }
-            .help("PDF (text or scanned), ChordPro, or chords-over-lyrics text")
+            .help("PDF (text or scanned), ChordPro, or chords-over-lyrics text. You can also drop the file onto this window.")
+
+            Toggle("Use chart's song order", isOn: $useChartOrder)
+                .toggleStyle(.checkbox)
+                .help("Sets verse / chorus / bridge order from the chart.")
+            Toggle("Replace lyrics with chart's", isOn: $replaceLyrics)
+                .toggleStyle(.checkbox)
+                .help("Off: keeps the words you have and adds chords. On: rebuilds the slides from the chart's lyrics.")
 
             Picker("Key", selection: Binding(get: { p.key ?? "" }, set: { p.key = $0.isEmpty ? nil : $0 })) {
                 Text("Unknown").tag("")
@@ -112,10 +141,16 @@ struct ChordEditor: View {
         .fixedSize()
     }
 
+    static func isChartFile(_ url: URL) -> Bool {
+        ["pdf", "txt", "cho", "chordpro", "crd"].contains(url.pathExtension.lowercased())
+    }
+
     private func importChart(_ url: URL) {
+        let ok = url.startAccessingSecurityScopedResource()
+        defer { if ok { url.stopAccessingSecurityScopedResource() } }
         do {
             let chart = try ChordChartReader.read(url: url)
-            report = ChordMatcher.apply(chart, to: &p, maxLines: maxLines)
+            report = ChordMatcher.apply(chart, to: &p, maxLines: maxLines, replaceLyrics: replaceLyrics, applyOrder: useChartOrder)
             error = nil
         } catch {
             self.error = error.localizedDescription

@@ -92,6 +92,8 @@ document.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.repeat)r
 html,body{margin:0;height:100%;background:#000;color:#fff;font-family:-apple-system,system-ui,sans-serif;overflow:hidden}
 #wrap{display:flex;flex-direction:column;height:100%}
 #top{display:flex;justify-content:space-between;padding:2vh 3vw;font-variant-numeric:tabular-nums}
+#foot{display:none;justify-content:space-between;align-items:baseline;background:#1f1f1f;padding:1.4vh 4vw;font-variant-numeric:tabular-nums}#foot small{color:#888;font-size:3vh;font-weight:800;margin-right:1vw}#foot b{font-size:6vh;font-weight:800}
+#big{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2vh}#big small{display:block;color:#888;font-size:3.4vh;font-weight:800;text-transform:uppercase;text-align:center}#big b{display:block;font-size:26vh;font-weight:800;line-height:1;text-align:center}
 #clock{font-size:6vh;font-weight:800}#timers{display:flex;gap:4vw}.t{text-align:right}.t small{display:block;color:#888;font-size:2vh;font-weight:700;text-transform:uppercase}.t b{font-size:6vh}
 #msg{align-self:center;background:#facc15;color:#000;font-weight:800;font-size:5vh;padding:1vh 2vw;border-radius:1vh;display:none}
 #cur{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:8vh;padding:0 4vw;white-space:pre-wrap;line-height:1.15}
@@ -100,7 +102,8 @@ html,body{margin:0;height:100%;background:#000;color:#fff;font-family:-apple-sys
 .cl{display:block;white-space:nowrap}.sg{display:inline-flex;flex-direction:column;white-space:pre}.sg b{color:#38bdf8;font-size:.6em;font-weight:900;min-height:1.1em}#next small{color:#888;font-weight:800;font-size:2.2vh}#nextt{color:#facc15;font-size:5vh;font-weight:600;white-space:pre-wrap}
 </style></head><body><div id="wrap">
 <div id="top"><div id="clock"></div><div id="timers"></div></div><div id="msg"></div>
-<div id="cur"></div><div id="notes"></div><div id="next"><small id="ng">NEXT</small><div id="nextt"></div></div></div>
+<div id="big"></div><div id="cur"></div><div id="notes"></div><div id="next"><small id="ng">NEXT</small><div id="nextt"></div></div>
+<div id="foot"><span><small>KEY</small><b id="fkey"></b></span><b id="fclock"></b></div></div>
 <script>
 const $=id=>document.getElementById(id);
 async function poll(){try{const s=await (await fetch('/api/stage')).json();
@@ -109,10 +112,14 @@ const el=(t,p,...k)=>{const e=document.createElement(t);for(const x in (p||{})){
 const chordHTML=ls=>el('div',{},ls.map(l=>el('span',{class:'cl'},l.map(g=>el('span',{class:'sg'},el('b',{},(g.c||'')+(g.c?'\u00a0':'')),g.t||'\u00a0')))));
 if(s.currentChords&&s.currentChords.length){$('cur').replaceChildren(chordHTML(s.currentChords))}else{$('cur').textContent=s.current||''}
 if(s.nextChordLines&&s.nextChordLines.length){$('nextt').replaceChildren(chordHTML(s.nextChordLines))}else{$('nextt').textContent=s.next||'—'}
-if(s.key)$('ng').textContent+=' · KEY '+s.key;
-$('ng').textContent=s.nextGroup?'NEXT • '+s.nextGroup.toUpperCase():'NEXT';$('notes').textContent=s.notes||'';
+$('ng').textContent=(s.nextGroup?'NEXT • '+s.nextGroup.toUpperCase():'NEXT')+((!s.footer&&s.key)?' · KEY '+s.key:'');
+$('cur').style.color=s.currentColor||'#fff';$('nextt').style.color=s.nextColor||'#facc15';
+$('clock').style.display=(s.footer||s.showClock===false)?'none':'block';
+$('foot').style.display=s.footer?'flex':'none';$('fkey').textContent=(s.showKey!==false&&s.key)?s.key:'';$('fclock').textContent=s.showClock===false?'':(s.clock||'');
+$('big').style.display=s.bigTimers?'flex':'none';$('big').replaceChildren(...(s.bigTimers?(s.timers||[]):[]).map(t=>el('div',{},el('small',{},t.name),el('b',{style:'color:'+(String(t.value).startsWith('-')?'#ef4444':'#fff')},t.value))));
+$('cur').style.display=(s.bigTimers&&!s.showCurrent)?'none':'flex';$('next').style.display=(s.showNext===false||s.bigTimers)?'none':'block';$('notes').textContent=s.notes||'';
 $('msg').style.display=s.message?'block':'none';$('msg').textContent=s.message||'';
-$('timers').replaceChildren(...(s.timers||[]).map(t=>el('div',{class:'t'},el('small',{},t.name),el('b',{style:'color:'+(String(t.value).startsWith('-')?'#ef4444':'#fff')},t.value))))}catch(e){}}
+$('timers').replaceChildren(...(s.bigTimers?[]:(s.timers||[])).map(t=>el('div',{class:'t'},el('small',{},t.name),el('b',{style:'color:'+(String(t.value).startsWith('-')?'#ef4444':'#fff')},t.value))))}catch(e){}}
 setInterval(poll,400);poll();
 </script></body></html>
 """#

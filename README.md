@@ -133,6 +133,8 @@ MultiTracks.com does not offer a public API for lyrics, so Lumen doesn't scrape 
 
 ## Chord charts and Nashville numbers on the stage display
 
+- **Make a whole song from one chart:** drag the chord chart PDF onto the Lumen window, or use **+ → New Song from Chord Chart…** (also in **New Song from Lyrics**, which has a drop box). Lumen builds the slides from the chart's lyrics and sets the **song order** (verse, chorus, verse, chorus, bridge… from the printed roadmap, or the order the sections are printed), the **key**, and the **chords**.
+- **Add a chart to an existing song:** open the song's editor and drop the PDF anywhere on it (it goes to the Chords tab), or click **Import Chord Chart…**. Tick **Use chart's song order** and/or **Replace lyrics with chart's** if you want those too. A Planning Center song that gets a new order is locked from sync so the next sync can't erase it.
 - **Import:** select a song, then click **Chords** in the slide grid header (or right-click it in the Library → *Chords & Nashville Numbers…*). Then **Import Chord Chart…**. It accepts:
   - PDF chord charts from SongSelect, Planning Center or MultiTracks, including two-column layouts. Scanned PDFs go through on-device OCR.
   - ChordPro files (`.cho`, `.chordpro`).
@@ -166,6 +168,13 @@ These translations are copyrighted, so Lumen doesn't ship their text. It routes 
 - **Esc**, the toolbar AI badge, or "I've got it" in volunteer mode hands control back to the operator immediately.
 - Scripture detection understands spoken forms like "turn with me to First Corinthians chapter thirteen, verse four through seven". Ambiguous book names like "Mark" or "Acts" need a cue word or a verse number. Detections appear in the Scripture tab with a **Display** button.
 
+## Stage display templates, timers and automatic switching
+
+- **Worship Team layout:** current lyrics in **yellow**, the next slide in **white**, and a bar along the bottom with the song's **key** (left) and the **time** (right). Colors, text size and whether the key shows are in **Settings → Stage**.
+- **Timers:** add timers (countdown, countdown to a time, stopwatch) in the Timers panel. In **Settings → Stage**, pick a layout's **Template**: *Lyrics*, or *Big timers* (the **Sermon Timer** layout, with huge countdowns, notes, and the time along the bottom). Tick which timers each layout shows. An overrun countdown turns red.
+- **Put a layout on the stage from a slide:** Slide → Actions → Add Action → **Stage Display Layout**. It stays until another layout action, **Clear All**, or a presentation type with its own layout goes live. Macros and MIDI can use the same action.
+- **Make a presentation type do it automatically:** **Settings → Type Defaults**. For each type (Song, Scripture, Sermon…) choose the stage display and any actions (for example start the Sermon timer). They happen whenever a presentation of that type goes live, from a click, the remote, a playlist, MIDI or volunteer mode, and the slide's own actions run after. A type with no layout goes back to each screen's own. New libraries start with Sermon → Sermon Timer; existing libraries are upgraded once and anything you restyled is left alone.
+
 ## Remote, stage display, Lightkey, calendar
 
 - **Setup → Remote & MIDI** shows the URLs and a QR code. Phones and tablets on the same network open it in any browser.
@@ -178,7 +187,7 @@ Microphone and Speech Recognition (AI listening), Camera (capture inputs), Scree
 
 ## How this was tested
 
-Automated (`xcodebuild test`, 138 tests): lyric/Bible/chord parsing and fuzzing (random and hostile input, run for hangs and crashes); the live engine under 3,000 random operations; Planning Center sync replaying a service shaped like a real plan; the remote server over real sockets with malformed requests; library damage and recovery; scheduling across daylight saving; the updater's safety paths with real signed apps (update, crash-on-launch rollback, wrong version/checksum/signer, read-only folder); pixel checks of the compositor; and every screen rendered with realistic data.
+Automated (`xcodebuild test`, 155 tests): lyric/Bible/chord parsing and fuzzing (random and hostile input, run for hangs and crashes); the live engine under 3,000 random operations; Planning Center sync replaying a service shaped like a real plan; the remote server over real sockets with malformed requests; library damage and recovery; scheduling across daylight saving; the updater's safety paths with real signed apps (update, crash-on-launch rollback, wrong version/checksum/signer, read-only folder); pixel checks of the compositor; and every screen rendered with realistic data.
 
 Soak (real app, three outputs at 60/30/15 fps, 1080p video loop behind the lyrics): 25 minutes and 10 minutes of randomized operator actions over the phone-remote API (slide changes, clears, looks, props, messages, timers, macros, the countdown video). No crashes or errors; memory held near 200 MB; open files and threads stayed flat; every output held its exact rate with 3 late frames out of ~90,000.
 

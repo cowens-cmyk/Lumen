@@ -369,7 +369,10 @@ enum RemoteAPI {
         }
         return ["current": s.current, "currentChords": chordLines(s.current, s.currentChords),
                 "nextChordLines": chordLines(s.next, s.nextChords), "key": s.key ?? "", "next": s.next, "nextGroup": s.nextGroup, "clock": s.clock, "notes": s.notes,
-                "message": s.message ?? "", "timers": s.timers.map { ["name": $0.0, "value": $0.1] }]
+                "message": s.message ?? "", "timers": s.timers.map { ["name": $0.0, "value": $0.1] },
+                "currentColor": s.layout.currentColor.hex, "nextColor": s.layout.nextColor.hex,
+                "footer": s.layout.footer == true, "showKey": s.layout.showKey != false, "showClock": s.layout.showClock,
+                "bigTimers": s.layout.style == .timers, "showCurrent": s.layout.showCurrent, "showNext": s.layout.showNext]
     }
 
     static func command(_ app: AppModel, _ b: [String: Any]) {

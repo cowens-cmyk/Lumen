@@ -193,16 +193,47 @@ final class LibraryStore {
             if data.templates[i].rules == ServiceTemplate.legacyDefaultRules { data.templates[i].rules = ServiceTemplate.defaultRules }
             data.templates[i].rulesVersion = 2
         }
+        upgradeStageTemplates()
         if data.themes.isEmpty || data.screens.isEmpty || data.looks.isEmpty {
             let seed = SeedData.make()
             if data.themes.isEmpty { data.themes = seed.themes }
             if data.screens.isEmpty { data.screens = seed.screens }
             if data.looks.isEmpty { data.looks = seed.looks }
-            if data.stageLayouts.isEmpty { data.stageLayouts = seed.stageLayouts }
+            if data.stageLayouts.isEmpty {
+                data.stageLayouts = seed.stageLayouts
+                data.settings.stageLayoutByKind.merge(seed.settings.stageLayoutByKind) { a, _ in a }
+                data.settings.stageTemplatesVersion = seed.settings.stageTemplatesVersion
+            }
             if data.templates.isEmpty { data.templates = seed.templates }
             data.settings.defaultThemeByKind.merge(seed.settings.defaultThemeByKind) { a, _ in a }
             if data.settings.defaultLookID == nil { data.settings.defaultLookID = seed.settings.defaultLookID }
         }
+    }
+
+    /// Brings an existing library up to the current stage templates once: the band display gets the yellow/white
+    /// lyrics and the key/time footer, and a big-timer template for sermons exists and is the sermon default.
+    private func upgradeStageTemplates() {
+        guard (data.settings.stageTemplatesVersion ?? 0) < 1, !data.stageLayouts.isEmpty else { return }
+        let oldCurrent = RGBA.white, oldNext = RGBA(hex: "#FACC15")
+        for i in data.stageLayouts.indices {
+            let l = data.stageLayouts[i]
+            // Only touch layouts still on the original look; anything the church restyled is left alone.
+            if l.footer == nil, l.name == "Worship Team", l.currentColor == oldCurrent, l.nextColor == oldNext {
+                data.stageLayouts[i].currentColor = RGBA(hex: "#FACC15")
+                data.stageLayouts[i].nextColor = .white
+                data.stageLayouts[i].footer = true
+                data.stageLayouts[i].showKey = true
+            }
+        }
+        if !data.stageLayouts.contains(where: { $0.style == .timers }) {
+            var t = StageLayout.sermonTimer()
+            if let sermon = data.timers.first(where: { $0.name.lowercased().contains("sermon") }) { t.timerIDs = [sermon.id] }
+            data.stageLayouts.append(t)
+            if data.settings.stageLayoutByKind[PresentationKind.sermon.rawValue] == nil {
+                data.settings.stageLayoutByKind[PresentationKind.sermon.rawValue] = t.id
+            }
+        }
+        data.settings.stageTemplatesVersion = 1
     }
 
     func scheduleSave() {

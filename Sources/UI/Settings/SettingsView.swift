@@ -10,6 +10,7 @@ struct SettingsView: View {
             ThemesSettings().tabItem { Label("Themes", systemImage: "paintpalette") }
             MacrosSettings().tabItem { Label("Macros", systemImage: "bolt") }
             StageSettings().tabItem { Label("Stage", systemImage: "person.wave.2") }
+            TypeDefaultsSettings().tabItem { Label("Type Defaults", systemImage: "rectangle.stack.badge.play") }
             PlanningCenterSettings().tabItem { Label("Planning Center", systemImage: "calendar") }
             BibleSettings().tabItem { Label("Bible", systemImage: "book.closed") }
             ConnectSettings().tabItem { Label("Remote & MIDI", systemImage: "iphone.radiowaves.left.and.right") }
@@ -385,6 +386,12 @@ struct StageSettings: View {
                 let l = binding($store.data.stageLayouts, id, fallback: StageLayout(name: ""))
                 Form {
                     TextField("Name", text: l.name)
+                    Picker("Template", selection: Binding(get: { l.wrappedValue.style ?? .lyrics }, set: { l.wrappedValue.style = $0 })) {
+                        ForEach(StageStyle.allCases) { Text($0.title).tag($0) }
+                    }
+                    Toggle("Key and time along the bottom", isOn: Binding(get: { l.wrappedValue.footer == true }, set: { l.wrappedValue.footer = $0 }))
+                    Toggle("Show the song's key", isOn: Binding(get: { l.wrappedValue.showKey != false }, set: { l.wrappedValue.showKey = $0 }))
+                        .disabled(l.wrappedValue.footer != true)
                     Toggle("Current slide", isOn: l.showCurrent)
                     Toggle("Next slide", isOn: l.showNext)
                     Toggle("Clock", isOn: l.showClock)
@@ -406,12 +413,18 @@ struct StageSettings: View {
                         Text("Songs show chords once a chord chart is imported (song → Chords). Nashville numbers are counted from the song's key, so they stay right even if the band changes keys.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Section("Timers shown") {
+                    Section("Timers shown (big on the Timer template)") {
                         ForEach(store.data.timers) { t in
                             Toggle(t.name, isOn: Binding(
                                 get: { l.wrappedValue.timerIDs.contains(t.id) },
                                 set: { on in if on { l.wrappedValue.timerIDs.append(t.id) } else { l.wrappedValue.timerIDs.removeAll { $0 == t.id } } }))
                         }
+                    }
+                    Section("Run this layout") {
+                        Text("Put it on the stage with a slide action (Slide → Actions → Stage Display Layout), or give a presentation type its own layout in Settings → Type Defaults so it goes up automatically.")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Button("Show on Stage Now") { app.engine.setStageLayout(l.wrappedValue.id) }
+                        Button("Back to Default") { app.engine.setStageLayout(nil) }
                     }
                     Section {
                         Text("Phones and tablets can also show the stage display: open \(app.remote.urls.first ?? "http://<this-mac>:\(store.data.settings.remotePort)")/stage")
@@ -422,6 +435,39 @@ struct StageSettings: View {
             }
         }
         .onAppear { selected = selected ?? store.data.stageLayouts.first?.id }
+    }
+}
+
+// MARK: - Type defaults
+
+/// What happens by itself whenever a presentation of a type goes live, whichever way it was started.
+struct TypeDefaultsSettings: View {
+    @Environment(AppModel.self) private var app
+    @State private var kind: PresentationKind = .sermon
+
+    var body: some View {
+        @Bindable var store = app.store
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Give each type of presentation a stage display and actions that happen automatically when it goes live, from a click, the remote, a playlist, MIDI or the volunteer screen. A slide's own actions run after these.")
+                .font(.callout).foregroundStyle(.secondary)
+            Picker("Presentation type", selection: $kind) {
+                ForEach(PresentationKind.allCases) { Label($0.title, systemImage: $0.symbol).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Picker("Stage display", selection: Binding(
+                get: { store.data.settings.stageLayoutByKind[kind.rawValue] },
+                set: { store.data.settings.stageLayoutByKind[kind.rawValue] = $0 })) {
+                Text("Each screen's own layout").tag(UUID?.none)
+                ForEach(store.data.stageLayouts) { Text($0.name).tag(Optional($0.id)) }
+            }
+            ActionListEditor(actions: Binding(
+                get: { store.data.settings.actionsByKind[kind.rawValue] ?? [] },
+                set: { store.data.settings.actionsByKind[kind.rawValue] = $0.isEmpty ? nil : $0 }))
+                .frame(minHeight: 200)
+            Text("Example: Sermon → stage display “Sermon Timer”, action Start Timer “Sermon”.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding()
     }
 }
 

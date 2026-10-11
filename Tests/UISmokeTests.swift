@@ -98,6 +98,7 @@ final class UISmokeTests: XCTestCase {
         try render(ThemesSettings(), size, "22-settings-themes")
         try render(MacrosSettings(), size, "23-settings-macros")
         try render(StageSettings(), size, "24-settings-stage")
+        try render(TypeDefaultsSettings(), size, "24b-settings-type-defaults")
         try render(PlanningCenterSettings(), size, "25-settings-planning-center")
         try render(BibleSettings(), size, "26-settings-bible")
         try render(ConnectSettings(), size, "27-settings-remote-midi")

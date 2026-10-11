@@ -4,6 +4,7 @@ struct Sidebar: View {
     @Environment(AppModel.self) private var app
     @Binding var importing: Bool
     @Binding var pasteLyrics: Bool
+    @Binding var importingChart: Bool
     @State private var tab = 0
     @State private var search = ""
     @State private var renamingPlaylist: UUID?
@@ -27,6 +28,7 @@ struct Sidebar: View {
             HStack {
                 Menu {
                     Button("New Song…") { pasteLyrics = true }
+                    Button("New Song from Chord Chart…  (PDF)") { importingChart = true }
                     Button("New Blank Song") { _ = app.newPresentation(kind: .song) }
                     Button("New Presentation") { _ = app.newPresentation(kind: .generic) }
                     Button("New Sermon") { _ = app.newPresentation(kind: .sermon) }

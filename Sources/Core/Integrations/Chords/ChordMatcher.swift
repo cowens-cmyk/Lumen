@@ -7,8 +7,13 @@ enum ChordMatcher {
         var totalLines = 0
         var unmatchedChartLines: [String] = []
         var key: String?
+        /// How many sections the chart's song order set (0 = the order wasn't changed).
+        var orderCount = 0
+        var lockedFromSync = false
         var summary: String {
             "Placed chords on \(matchedLines) of \(totalLines) lyric lines" + (key.map { " · key of \($0)" } ?? "")
+                + (orderCount > 0 ? " · song order: \(orderCount) sections" : "")
+                + (lockedFromSync ? " · locked from Planning Center sync so it isn't overwritten" : "")
                 + (unmatchedChartLines.isEmpty ? "" : " · \(unmatchedChartLines.count) chart lines didn't match")
         }
     }
@@ -90,10 +95,13 @@ enum ChordMatcher {
     }
 
     /// Applies a chart to a presentation. Songs with no slides yet are built from the chart's lyrics.
+    /// `replaceLyrics` rebuilds the slides from the chart even if the song already has words; `applyOrder` sets the
+    /// song order (verse, chorus, verse, chorus, bridge…) from the chart.
     @discardableResult
-    static func apply(_ chart: ChordChart, to p: inout Presentation, maxLines: Int) -> Report {
+    static func apply(_ chart: ChordChart, to p: inout Presentation, maxLines: Int,
+                      replaceLyrics: Bool = false, applyOrder: Bool = true) -> Report {
         var report = Report(key: chart.key)
-        if p.groups.allSatisfy({ $0.slides.allSatisfy { $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }) {
+        if replaceLyrics || p.groups.allSatisfy({ $0.slides.allSatisfy { $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }) {
             let text = chart.sections.map { s in
                 "[\(s.name)]\n" + s.lines.map(\.lyric).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.joined(separator: "\n")
             }.joined(separator: "\n\n")
@@ -140,7 +148,43 @@ enum ChordMatcher {
             }
         }
         report.unmatchedChartLines = chartLines.enumerated().filter { !used.contains($0.offset) }.map(\.element.line.lyric)
+        if applyOrder, let order = songOrder(of: chart, groups: p.groups), !order.isEmpty {
+            p.arrangement = order
+            report.orderCount = order.count
+            // A Planning Center song would lose this order on its next sync.
+            if p.pcoSongID != nil, !p.lockedFromSync { p.lockedFromSync = true; report.lockedFromSync = true }
+        }
         return report
+    }
+
+    /// The chart's song order as group IDs: its printed roadmap if it has one, otherwise the order its sections are
+    /// printed in (a chorus printed twice plays twice). Nil if that can't be matched to the slides reliably.
+    static func songOrder(of chart: ChordChart, groups: [SlideGroup]) -> [UUID]? {
+        if !chart.roadmap.isEmpty {
+            let order = LyricParser.arrangement(from: chart.roadmap, groups: groups)
+            return order.isEmpty ? nil : order
+        }
+        let sections = chart.sections.filter { !$0.name.isEmpty }
+        guard sections.count > 1 else { return nil }
+        func signature(_ lines: [String]) -> [String] { lines.flatMap { words($0) } }
+        let groupSigs = groups.map { g in (g, signature(g.slides.flatMap { $0.text.components(separatedBy: "\n") })) }
+        var order: [UUID] = []
+        for sec in sections {
+            let sig = signature(sec.lines.map(\.lyric))
+            let key = LyricParser.normalizeSectionKey(sec.name)
+            func sameName(_ g: SlideGroup) -> Bool {
+                let k = LyricParser.normalizeSectionKey(g.name)
+                return k == key || k.hasPrefix(key) || key.hasPrefix(k)
+            }
+            let best = groupSigs.first { sameName($0.0) && !sig.isEmpty && similarity(sig, $0.1) >= 0.8 }
+                ?? groupSigs.first { !sig.isEmpty && similarity(sig, $0.1) >= 0.8 }
+                ?? groupSigs.first { sameName($0.0) && sig.isEmpty }   // instrumental sections have no words
+            if let b = best { order.append(b.0.id) }
+        }
+        // Every section with words must still be somewhere in the show, or the order isn't trustworthy.
+        let covered = Set(order)
+        let missing = groups.contains { g in !covered.contains(g.id) && g.slides.contains { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty } }
+        return missing ? nil : order
     }
 }
 

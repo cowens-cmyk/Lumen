@@ -33,6 +33,12 @@ struct AppSettings: Codable, Hashable {
     /// Scripture is shown as straight running text. Tick this to keep the line breaks the translation has (poetry, etc.).
     var bibleKeepLineBreaks: Bool? = nil
 
+    // What happens by itself when a presentation of this type goes live (keyed by PresentationKind.rawValue).
+    var stageLayoutByKind: [String: UUID] = [:]
+    var actionsByKind: [String: [SlideAction]] = [:]
+    /// Which built-in stage templates this library has already been given (so a deleted one isn't brought back).
+    var stageTemplatesVersion: Int? = nil
+
     // Themes per presentation kind
     var defaultThemeByKind: [PresentationKind: UUID] = [:]
     var defaultLookID: UUID? = nil
@@ -65,7 +71,7 @@ struct AppSettings: Codable, Hashable {
     var calendarName: String = ""
 
     enum CodingKeys: String, CodingKey {
-        case pcoAppID, pcoServiceTypeIDs, pcoSyncDaysAhead, pcoAutoSyncMinutes, pcoTemplateID, bibleProvider, bibleTranslation, bibleVersesPerSlide, bibleMaxCharsPerSlide, bibleSelection, bibleKeepLineBreaks, defaultThemeByKind, defaultLookID, transitionSeconds, defaultMediaScale, remoteEnabled, remotePort, remotePIN, volunteerPIN, startInVolunteerMode, midiEnabled, midiOutputName, listenInputDeviceUID, lyricFollowAutoAdvance, lyricFollowThreshold, scriptureDetection, speechLocale, calendarTriggersEnabled, calendarName
+        case pcoAppID, pcoServiceTypeIDs, pcoSyncDaysAhead, pcoAutoSyncMinutes, pcoTemplateID, bibleProvider, bibleTranslation, bibleVersesPerSlide, bibleMaxCharsPerSlide, bibleSelection, bibleKeepLineBreaks, stageLayoutByKind, actionsByKind, stageTemplatesVersion, defaultThemeByKind, defaultLookID, transitionSeconds, defaultMediaScale, remoteEnabled, remotePort, remotePIN, volunteerPIN, startInVolunteerMode, midiEnabled, midiOutputName, listenInputDeviceUID, lyricFollowAutoAdvance, lyricFollowThreshold, scriptureDetection, speechLocale, calendarTriggersEnabled, calendarName
     }
 
     /// A missing or unreadable setting falls back to its default, so adding a setting in a new version never
@@ -87,6 +93,9 @@ struct AppSettings: Codable, Hashable {
         read(.bibleMaxCharsPerSlide, \.bibleMaxCharsPerSlide)
         read(.bibleSelection, \.bibleSelection)
         read(.bibleKeepLineBreaks, \.bibleKeepLineBreaks)
+        read(.stageLayoutByKind, \.stageLayoutByKind)
+        read(.actionsByKind, \.actionsByKind)
+        read(.stageTemplatesVersion, \.stageTemplatesVersion)
         read(.defaultThemeByKind, \.defaultThemeByKind)
         read(.defaultLookID, \.defaultLookID)
         read(.transitionSeconds, \.transitionSeconds)
