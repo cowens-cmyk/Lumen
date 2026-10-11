@@ -101,14 +101,29 @@ enum ChordMatcher {
     static func apply(_ chart: ChordChart, to p: inout Presentation, maxLines: Int,
                       replaceLyrics: Bool = false, applyOrder: Bool = true) -> Report {
         var report = Report(key: chart.key)
-        if replaceLyrics || p.groups.allSatisfy({ $0.slides.allSatisfy { $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }) {
-            let text = chart.sections.map { s in
-                "[\(s.name)]\n" + s.lines.map(\.lyric).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.joined(separator: "\n")
-            }.joined(separator: "\n\n")
-            LyricParser.apply(text: text, to: &p, maxLines: maxLines)
-            if p.name.isEmpty || p.name.hasPrefix("New ") { p.name = chart.title }
-        }
         if p.key == nil || p.key?.isEmpty == true { p.key = chart.key }
+        if p.author.isEmpty { p.author = chart.artist }
+        if p.ccli.isEmpty { p.ccli = chart.ccli }
+        let blank = p.groups.allSatisfy { $0.slides.allSatisfy { $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }
+        if replaceLyrics || blank {
+            let built = build(chart, maxLines: maxLines, reusing: p.groups)
+            if !built.groups.isEmpty {
+                p.groups = built.groups
+                if p.name.isEmpty || p.name.hasPrefix("New ") { p.name = chart.title }
+                let lyricLines = built.groups.reduce(0) { $0 + $1.slides.reduce(0) { $0 + $1.text.split(separator: "\n").count } }
+                report.totalLines = lyricLines
+                report.matchedLines = lyricLines
+                let valid = Set(built.groups.map(\.id))
+                if applyOrder, !built.order.isEmpty {
+                    p.arrangement = built.order
+                    report.orderCount = built.order.count
+                    if p.pcoSongID != nil, !p.lockedFromSync { p.lockedFromSync = true; report.lockedFromSync = true }
+                } else {
+                    p.arrangement = p.arrangement.filter(valid.contains)
+                }
+                return report
+            }
+        }
 
         let chartLines = chart.lyricLines.map { (section: $0.section, line: $0.line, words: words($0.line.lyric)) }
         var used = Set<Int>()
@@ -147,7 +162,10 @@ enum ChordMatcher {
                 p.groups[gi].slides[si].chords = placements.isEmpty ? nil : placements
             }
         }
-        report.unmatchedChartLines = chartLines.enumerated().filter { !used.contains($0.offset) }.map(\.element.line.lyric)
+        // A section printed several times only needs to match once.
+        let matchedWords = Set(used.map { chartLines[$0].words })
+        report.unmatchedChartLines = chartLines.enumerated()
+            .filter { !used.contains($0.offset) && !matchedWords.contains($0.element.words) }.map(\.element.line.lyric)
         if applyOrder, let order = songOrder(of: chart, groups: p.groups), !order.isEmpty {
             p.arrangement = order
             report.orderCount = order.count
@@ -157,30 +175,122 @@ enum ChordMatcher {
         return report
     }
 
-    /// The chart's song order as group IDs: its printed roadmap if it has one, otherwise the order its sections are
-    /// printed in (a chorus printed twice plays twice). Nil if that can't be matched to the slides reliably.
-    static func songOrder(of chart: ChordChart, groups: [SlideGroup]) -> [UUID]? {
-        if !chart.roadmap.isEmpty {
-            let order = LyricParser.arrangement(from: chart.roadmap, groups: groups)
-            return order.isEmpty ? nil : order
-        }
-        let sections = chart.sections.filter { !$0.name.isEmpty }
-        guard sections.count > 1 else { return nil }
-        func signature(_ lines: [String]) -> [String] { lines.flatMap { words($0) } }
-        let groupSigs = groups.map { g in (g, signature(g.slides.flatMap { $0.text.components(separatedBy: "\n") })) }
+    /// Builds the slides straight from a chart. Each section becomes a group, and a section sung again reuses its
+    /// group, so the order can repeat it. The chords are already in place, and the section's note goes on its
+    /// first slide. An instrumental section (intro, interlude) becomes one blank slide: nothing for the room, its
+    /// chords for the band. Group IDs and slide settings are kept where a group of that name already exists.
+    static func build(_ chart: ChordChart, maxLines: Int, reusing old: [SlideGroup] = []) -> (groups: [SlideGroup], order: [UUID]) {
+        var groups: [SlideGroup] = []
+        var sectionKey: [UUID: String] = [:]
+        var signature: [UUID: [String]] = [:]
+        var lastByKey: [String: UUID] = [:]
         var order: [UUID] = []
-        for sec in sections {
-            let sig = signature(sec.lines.map(\.lyric))
-            let key = LyricParser.normalizeSectionKey(sec.name)
-            func sameName(_ g: SlideGroup) -> Bool {
-                let k = LyricParser.normalizeSectionKey(g.name)
-                return k == key || k.hasPrefix(key) || key.hasPrefix(k)
+        let maxLines = max(1, maxLines)
+
+        for sec in chart.sections {
+            let name = sec.name.isEmpty ? "Verse 1" : sec.name
+            let key = LyricParser.normalizeSectionKey(name)
+            let lyric = sec.lines.filter { !$0.lyric.trimmingCharacters(in: .whitespaces).isEmpty }
+            let sig = lyric.flatMap { words($0.lyric) }
+            if !sec.hasContent {
+                // A heading on its own: that section again. With nothing earlier to repeat (a vamp), a blank slide.
+                if let id = lastByKey[key] ?? groups.first(where: { sectionKey[$0.id] == key })?.id {
+                    order.append(id)
+                    continue
+                }
+            } else if let same = groups.first(where: { g in
+                sectionKey[g.id] == key && (sig.isEmpty ? signature[g.id]?.isEmpty == true : similarity(sig, signature[g.id] ?? []) >= 0.85)
+            }) {
+                order.append(same.id)
+                lastByKey[key] = same.id
+                continue
             }
-            let best = groupSigs.first { sameName($0.0) && !sig.isEmpty && similarity(sig, $0.1) >= 0.8 }
-                ?? groupSigs.first { !sig.isEmpty && similarity(sig, $0.1) >= 0.8 }
-                ?? groupSigs.first { sameName($0.0) && sig.isEmpty }   // instrumental sections have no words
-            if let b = best { order.append(b.0.id) }
+
+            var groupName = name
+            var n = 2
+            while groups.contains(where: { $0.name.caseInsensitiveCompare(groupName) == .orderedSame }) {
+                groupName = name.last?.isNumber == true ? "\(name) (\(n))" : "\(name) \(n)"
+                n += 1
+            }
+            let previous = old.first { $0.name.caseInsensitiveCompare(groupName) == .orderedSame }
+            let slideContent = slides(for: sec, maxLines: maxLines)
+            let slides = slideContent.enumerated().map { i, content -> Slide in
+                var s = previous?.slides[safe: i] ?? Slide()
+                s.text = content.text
+                s.chords = content.chords.isEmpty ? nil : content.chords
+                if i == 0, !sec.note.isEmpty, s.notes.isEmpty { s.notes = sec.note }
+                return s
+            }
+            let g = SlideGroup(id: previous?.id ?? UUID(), name: groupName,
+                               color: previous?.color ?? SlideGroup.color(for: groupName), slides: slides)
+            groups.append(g)
+            sectionKey[g.id] = key
+            signature[g.id] = sig
+            lastByKey[key] = g.id
+            order.append(g.id)
         }
+
+        // A roadmap printed at the top that's longer than what the chart spells out (sections printed once) wins.
+        if chart.roadmap.count > order.count {
+            let fromRoadmap = LyricParser.arrangement(from: chart.roadmap, groups: groups)
+            if fromRoadmap.count == chart.roadmap.count { order = fromRoadmap }
+        }
+        return (groups, order)
+    }
+
+    /// One section's lyric lines cut into slides, with each line's chords. Chords on a line with no words are kept:
+    /// at the end of the line before (a held chord) or, at the start, on the first line.
+    static func slides(for sec: ChordChart.Section, maxLines: Int) -> [(text: String, chords: [ChordPlacement])] {
+        var lines: [(lyric: String, chords: [(Int, String)])] = []
+        var leading: [(Int, String)] = []
+        for l in sec.lines {
+            if l.lyric.trimmingCharacters(in: .whitespaces).isEmpty {
+                if lines.isEmpty { leading += l.chords.map { (0, $0.chord) } }
+                else { let end = lines[lines.count - 1].lyric.count; lines[lines.count - 1].chords += l.chords.map { (end, $0.chord) } }
+                continue
+            }
+            lines.append((l.lyric, leading + l.chords.map { ($0.index, $0.chord) }))
+            leading = []
+        }
+        if lines.isEmpty {
+            return [("", leading.map { ChordPlacement(line: 0, index: 0, chord: $0.1) })]
+        }
+        return stride(from: 0, to: lines.count, by: maxLines).map { start in
+            let chunk = lines[start..<min(start + maxLines, lines.count)]
+            let text = chunk.map(\.lyric).joined(separator: "\n")
+            let chords = chunk.enumerated().flatMap { li, line in line.chords.map { ChordPlacement(line: li, index: $0.0, chord: $0.1) } }
+            return (text, chords)
+        }
+    }
+
+    /// The chart's song order as group IDs, for a song whose slides already exist: every section in the order it's
+    /// printed (a heading with nothing under it is that section again), or the printed roadmap if that's longer.
+    /// Nil if it can't be matched to the slides reliably.
+    static func songOrder(of chart: ChordChart, groups: [SlideGroup]) -> [UUID]? {
+        let keyed = groups.map { g in
+            (id: g.id, key: LyricParser.normalizeSectionKey(g.name), sig: g.slides.flatMap { words($0.text) })
+        }
+        var order: [UUID] = []
+        var lastByKey: [String: UUID] = [:]
+        for sec in chart.sections where !sec.name.isEmpty {
+            let key = LyricParser.normalizeSectionKey(sec.name)
+            let sig = sec.lines.flatMap { words($0.lyric) }
+            func sameName(_ k: String) -> Bool { k == key || k.hasPrefix(key) || key.hasPrefix(k) }
+            var pick: UUID?
+            if sig.isEmpty {
+                pick = lastByKey[key] ?? keyed.first { $0.key == key }?.id ?? keyed.first { sameName($0.key) }?.id
+            } else {
+                let scored = keyed.map { ($0.id, similarity(sig, $0.sig) + (sameName($0.key) ? 0.1 : 0) + ($0.key == key ? 0.05 : 0)) }
+                if let best = scored.max(by: { $0.1 < $1.1 }), best.1 >= 0.7 { pick = best.0 }
+                else { pick = keyed.first { $0.key == key }?.id }   // worded differently, but the name matches
+            }
+            if let pick { order.append(pick); lastByKey[key] = pick }
+        }
+        if chart.roadmap.count > order.count {
+            let fromRoadmap = LyricParser.arrangement(from: chart.roadmap, groups: groups)
+            if fromRoadmap.count == chart.roadmap.count { order = fromRoadmap }
+        }
+        guard order.count > 1 else { return nil }
         // Every section with words must still be somewhere in the show, or the order isn't trustworthy.
         let covered = Set(order)
         let missing = groups.contains { g in !covered.contains(g.id) && g.slides.contains { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty } }

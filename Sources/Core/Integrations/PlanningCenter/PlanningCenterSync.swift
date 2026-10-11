@@ -321,7 +321,8 @@ final class PlanningCenterSync {
             if let k = arr?.string("chord_chart_key"), !k.isEmpty { chart.key = k }
             // Keep hand-fixed chords unless the slides had none.
             let hasChords = p.groups.contains { $0.slides.contains { !($0.chords ?? []).isEmpty } }
-            if !hasChords { ChordMatcher.apply(chart, to: &p, maxLines: maxLines) }
+            // Chords only: the order comes from Planning Center, and a synced song must stay in sync.
+            if !hasChords { ChordMatcher.apply(chart, to: &p, maxLines: maxLines, applyOrder: false) }
         }
 
         if var existing = store.data.presentations.first(where: { $0.pcoArrangementID == arrID && arrID != nil }) {

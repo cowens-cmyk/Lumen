@@ -228,16 +228,19 @@ final class ChordChartReaderTests: XCTestCase {
         let chart = try ChordChartReader.read(url: url)
         XCTAssertNil(chart.key, "a Numbers chart has no letter key")
         XCTAssertEqual(chart.title, "Test Song")
-        XCTAssertEqual(chart.roadmap, ["Pre-Chorus 1", "Chorus 1"])
-        XCTAssertEqual(chart.sections.map(\.name), ["Chorus 1", "Verse 2", "Tag"])
+        // The jump line partway through the chart isn't the whole song order: it means sing those again here.
+        XCTAssertEqual(chart.roadmap, [])
+        XCTAssertEqual(chart.sections.map(\.name), ["Chorus 1", "Verse 2", "Pre-Chorus 1", "Chorus 1", "Tag"])
+        XCTAssertEqual(chart.sections.map(\.hasContent), [true, true, false, false, true])
+        XCTAssertEqual(chart.artist, "Test Artist")
         func cp(_ l: ChordChart.Line) -> String {
             ChordPro.encode(text: l.lyric, chords: l.chords.map { ChordPlacement(line: 0, index: $0.index, chord: $0.chord) })
         }
         XCTAssertEqual(cp(chart.sections[0].lines[0]), "And the angels [4]cry, [6m]ho[5]ly")
         XCTAssertEqual(cp(chart.sections[0].lines[1]), "Holy for[1]ever[1sus][1]")
         XCTAssertEqual(cp(chart.sections[1].lines[0]), "And if you've been re[1]deemed")
-        XCTAssertEqual(chart.sections[2].lines.count, 1, "page header and copyright must not become lyrics")
-        XCTAssertEqual(cp(chart.sections[2].lines[0]), "We'll [6m]sing the song for[5]ever")
+        XCTAssertEqual(chart.sections[4].lines.count, 1, "page header and copyright must not become lyrics")
+        XCTAssertEqual(cp(chart.sections[4].lines[0]), "We'll [6m]sing the song for[5]ever")
 
         // Numbers display as-is with no key; with a key, letters can be shown.
         XCTAssertEqual(ChordLayout.label("6m", key: nil, style: .nashville), "6m")
